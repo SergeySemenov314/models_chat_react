@@ -53,6 +53,22 @@
   color: #ff6b6b;
 }
 
+.toggle-prompt-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #666;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.toggle-prompt-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
 .server-config input[type="text"] {
   padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;

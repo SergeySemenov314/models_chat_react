@@ -10,6 +10,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const messagesEndRef = useRef(null);
   const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
   const customServerUrl = process.env.REACT_APP_CUSTOM_SERVER_URL || '';
@@ -287,12 +288,21 @@ function App() {
             />
             Использовать системный промпт
           </label>
+          {useSystemPrompt && (
+            <button 
+              onClick={() => setShowSystemPrompt(!showSystemPrompt)}
+              className="toggle-prompt-btn"
+              type="button"
+            >
+              {showSystemPrompt ? '🔼 Скрыть промпт' : '🔽 Настроить промпт'}
+            </button>
+          )}
           <button onClick={clearChat} className="clear-btn">
             Очистить чат
           </button>
         </div>
         
-        {useSystemPrompt && (
+        {useSystemPrompt && showSystemPrompt && (
           <div className="system-prompt-config">
             <label>
               Системный промпт (контекст для AI):
@@ -326,6 +336,11 @@ function App() {
               {apiKey.trim() && useSystemPrompt && (
                 <div className="system-prompt-status active">
                   ✅ Системный промпт активен
+                  {!showSystemPrompt && (
+                    <div style={{fontSize: '0.8em', marginTop: '0.3rem', opacity: 0.8}}>
+                      "{systemPrompt.length > 50 ? systemPrompt.substring(0, 50) + '...' : systemPrompt}"
+                    </div>
+                  )}
                 </div>
               )}
               {apiKey.trim() && !useSystemPrompt && (
