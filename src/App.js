@@ -11,6 +11,9 @@ function App() {
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const messagesEndRef = useRef(null);
+  const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
+  const customServerUrl = process.env.REACT_APP_CUSTOM_SERVER_URL || '';
+  const customModel = process.env.REACT_APP_CUSTOM_MODEL || 'qwen2:0.5b';
   const [availableModels, setAvailableModels] = useState([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [modelsError, setModelsError] = useState('');
@@ -50,7 +53,7 @@ function App() {
   // Загружаем список доступных моделей (ListModels)
   useEffect(() => {
     const loadModels = async () => {
-      if (!apiKey.trim()) return;
+      if (provider !== 'gemini' || !apiKey.trim()) return;
       try {
         setModelsLoaded(false);
         setModelsError('');
@@ -82,11 +85,13 @@ function App() {
     };
 
     loadModels();
-    // Загружаем при первом наличии ключа
-  }, [apiKey, selectedModel]);
+    // Загружаем при первом наличии ключа и при смене провайдера
+  }, [apiKey, selectedModel, provider]);
 
   const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading || !apiKey.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
+    if (provider === 'gemini' && !apiKey.trim()) return;
+    if (provider === 'custom' && !customServerUrl.trim()) return;
 
     const userMessage = { role: 'user', content: inputValue, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
@@ -95,74 +100,101 @@ function App() {
     setIsLoading(true);
 
     try {
-      // Инициализируем Gemini AI
-      const genAI = new GoogleGenerativeAI(apiKey);
+      if (provider === 'gemini') {
+        // Инициализируем Gemini AI
+        const genAI = new GoogleGenerativeAI(apiKey);
 
-      // Если выбранная модель недоступна по данным ListModels — выберем лучшую доступную
-      let modelNameToUse = selectedModel;
-      if (availableModels.length > 0) {
-        const flatNames = availableModels.map(n => n.includes('/') ? n.split('/').pop() : n);
-        if (!flatNames.includes(modelNameToUse)) {
-          modelNameToUse = pickBestModel(availableModels);
+        // Если выбранная модель недоступна по данным ListModels — выберем лучшую доступную
+        let modelNameToUse = selectedModel;
+        if (availableModels.length > 0) {
+          const flatNames = availableModels.map(n => n.includes('/') ? n.split('/').pop() : n);
+          if (!flatNames.includes(modelNameToUse)) {
+            modelNameToUse = pickBestModel(availableModels);
+          }
         }
-      }
 
-      let model = genAI.getGenerativeModel({ model: modelNameToUse });
+        let model = genAI.getGenerativeModel({ model: modelNameToUse });
 
-      // Подготавливаем историю для чата
-      let prompt = '';
-      
-      // Добавляем системный промпт если включен
-      if (useSystemPrompt && systemPrompt.trim()) {
-        prompt += `Системная инструкция: ${systemPrompt}\n\n`;
-      }
-      
-      // Добавляем историю сообщений (последние 10 для контекста)
-      const recentMessages = messages.slice(-10).filter(msg => msg.role !== 'error');
-      recentMessages.forEach(msg => {
-        const roleLabel = msg.role === 'assistant' ? 'AI' : 'Пользователь';
-        prompt += `${roleLabel}: ${msg.content}\n`;
-      });
-      
-      // Добавляем текущее сообщение пользователя
-      prompt += `Пользователь: ${currentInput}\nAI: `;
+        // Подготавливаем историю для чата
+        let prompt = '';
+        if (useSystemPrompt && systemPrompt.trim()) {
+          prompt += `Системная инструкция: ${systemPrompt}\n\n`;
+        }
+        const recentMessages = messages.slice(-10).filter(msg => msg.role !== 'error');
+        recentMessages.forEach(msg => {
+          const roleLabel = msg.role === 'assistant' ? 'AI' : 'Пользователь';
+          prompt += `${roleLabel}: ${msg.content}\n`;
+        });
+        prompt += `Пользователь: ${currentInput}\nAI: `;
 
-      let result;
-      try {
-        result = await model.generateContent(prompt);
-      } catch (err) {
-        // Если 404 по модели — пробуем подобрать доступную и повторить один раз
-        const isNotFound = (err && (String(err.message || err).includes('404') || String(err.message || err).includes('not found')));
-        if (isNotFound && availableModels.length > 0) {
-          const fallback = pickBestModel(availableModels);
-          if (fallback && fallback !== modelNameToUse) {
-            modelNameToUse = fallback;
-            setSelectedModel(fallback);
-            model = genAI.getGenerativeModel({ model: modelNameToUse });
-            result = await model.generateContent(prompt);
+        let result;
+        try {
+          result = await model.generateContent(prompt);
+        } catch (err) {
+          const isNotFound = (err && (String(err.message || err).includes('404') || String(err.message || err).includes('not found')));
+          if (isNotFound && availableModels.length > 0) {
+            const fallback = pickBestModel(availableModels);
+            if (fallback && fallback !== modelNameToUse) {
+              modelNameToUse = fallback;
+              setSelectedModel(fallback);
+              model = genAI.getGenerativeModel({ model: modelNameToUse });
+              result = await model.generateContent(prompt);
+            } else {
+              throw err;
+            }
           } else {
             throw err;
           }
-        } else {
-          throw err;
         }
-      }
-      const response = await result.response;
-      const text = response.text();
+        const response = await result.response;
+        const text = response.text();
 
-      const aiMessage = { 
-        role: 'assistant', 
-        content: text, 
-        timestamp: new Date(),
-        stats: {
-          model: selectedModel,
-          promptTokens: response.usageMetadata?.promptTokenCount || 0,
-          responseTokens: response.usageMetadata?.candidatesTokenCount || 0,
-          totalTokens: response.usageMetadata?.totalTokenCount || 0
+        const aiMessage = { 
+          role: 'assistant', 
+          content: text, 
+          timestamp: new Date(),
+          stats: {
+            model: modelNameToUse,
+            promptTokens: response.usageMetadata?.promptTokenCount || 0,
+            responseTokens: response.usageMetadata?.candidatesTokenCount || 0,
+            totalTokens: response.usageMetadata?.totalTokenCount || 0
+          }
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // Кастомный сервер (совместим с /api/chat)
+        const chatMessages = [];
+        if (useSystemPrompt && systemPrompt.trim()) {
+          chatMessages.push({ role: 'system', content: systemPrompt });
         }
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+        const recentMessages = messages.slice(-10).filter(msg => msg.role !== 'error');
+        chatMessages.push(...recentMessages.map(msg => ({ role: msg.role, content: msg.content })));
+        chatMessages.push({ role: 'user', content: currentInput });
+
+        const resp = await fetch(`${customServerUrl.replace(/\/$/, '')}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: customModel, messages: chatMessages, stream: false })
+        });
+        if (!resp.ok) {
+          const errorData = await resp.text();
+          throw new Error(`Custom server HTTP ${resp.status}: ${errorData}`);
+        }
+        const data = await resp.json();
+        const content = data?.message?.content || data?.content || '';
+        const aiMessage = {
+          role: 'assistant',
+          content: content,
+          timestamp: new Date(),
+          stats: {
+            model: customModel,
+            totalTokens: data?.usage?.total_tokens || data?.eval_count || 0,
+            promptTokens: data?.usage?.prompt_tokens || 0,
+            responseTokens: data?.usage?.completion_tokens || 0
+          }
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      }
     } catch (error) {
       console.error('Ошибка:', error);
       const errorMessage = { 
@@ -209,31 +241,42 @@ function App() {
         <h1>🤖 Gemini Chat</h1>
         <div className="server-config">
           <label>
+            Провайдер: 
+            <select value={provider} onChange={(e) => setProvider(e.target.value)}>
+              <option value="gemini">Google Gemini</option>
+              <option value="custom">Мой сервер</option>
+            </select>
+          </label>
+          <label>
             Модель: 
             <select 
               value={selectedModel} 
               onChange={(e) => setSelectedModel(e.target.value)}
             >
-              {availableModels.length > 0 ? (
+              {provider === 'gemini' && availableModels.length > 0 ? (
                 availableModels.map((m) => {
                   const short = m.includes('/') ? m.split('/').pop() : m;
                   return (
                     <option key={m} value={short}>{short}</option>
                   );
                 })
-              ) : (
+              ) : provider === 'gemini' ? (
                 <>
                   <option value="gemini-1.5-pro">gemini-1.5-pro</option>
                   <option value="gemini-1.5-flash">gemini-1.5-flash</option>
                   <option value="gemini-pro">gemini-pro</option>
                 </>
+              ) : (
+                <>
+                  <option value={customModel}>{customModel}</option>
+                </>
               )}
             </select>
           </label>
-          {!modelsLoaded && apiKey.trim() && (
+          {provider === 'gemini' && !modelsLoaded && apiKey.trim() && (
             <div className="models-warning">Загружаю список моделей…</div>
           )}
-          {modelsError && (
+          {provider === 'gemini' && modelsError && (
             <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
           )}
           <label className="system-prompt-toggle">
@@ -290,7 +333,7 @@ function App() {
                   ℹ️ Системный промпт отключен - AI работает без дополнительного контекста
                 </div>
               )}
-              {apiKey.trim() && (
+              {(provider === 'gemini' ? apiKey.trim() : customServerUrl.trim()) && (
                 <div className="example-prompts">
                   <button onClick={() => setInputValue('Привет! Как дела?')}>
                     Привет! Как дела?
@@ -303,7 +346,7 @@ function App() {
                   </button>
                 </div>
               )}
-              {!apiKey.trim() && (
+              {provider === 'gemini' && !apiKey.trim() && (
                 <div className="api-key-help">
                   <p>📝 Настройка API ключа:</p>
                   <ol>
@@ -313,6 +356,16 @@ function App() {
                     <li>Перезапустите приложение</li>
                   </ol>
                   <p>🆓 Бесплатный лимит: 15 запросов/мин, 1500 запросов/день</p>
+                </div>
+              )}
+              {provider === 'custom' && !customServerUrl.trim() && (
+                <div className="api-key-help">
+                  <p>🛠 Настройка вашего сервера:</p>
+                  <ol>
+                    <li>Добавьте в <code>.env</code>: <code>REACT_APP_CUSTOM_SERVER_URL=https://your-domain.tld:11434</code></li>
+                    <li>(Опционально) <code>REACT_APP_CUSTOM_MODEL=llama3.1:8b</code></li>
+                    <li>Перезапустите приложение</li>
+                  </ol>
                 </div>
               )}
             </div>
@@ -381,9 +434,9 @@ function App() {
           />
           <button 
             onClick={sendMessage} 
-            disabled={!inputValue.trim() || isLoading || !apiKey.trim()}
+            disabled={!inputValue.trim() || isLoading || (provider === 'gemini' ? !apiKey.trim() : !customServerUrl.trim())}
             className="send-btn"
-            title={!apiKey.trim() ? 'Настройте API ключ в .env' : 'Отправить сообщение'}
+            title={(provider === 'gemini' ? (!apiKey.trim() ? 'Настройте API ключ в .env' : 'Отправить сообщение') : (!customServerUrl.trim() ? 'Укажите REACT_APP_CUSTOM_SERVER_URL в .env' : 'Отправить сообщение'))}
           >
             {isLoading ? '⏳' : '📤'}
           </button>
