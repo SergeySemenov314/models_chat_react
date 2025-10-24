@@ -7,7 +7,7 @@ function App() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey] = useState(process.env.REACT_APP_GEMINI_API_KEY || '');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
