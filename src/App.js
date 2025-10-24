@@ -7,7 +7,7 @@ function App() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey] = useState(process.env.REACT_APP_GEMINI_API_KEY || '');
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
@@ -30,13 +30,10 @@ function App() {
   // Выбор лучшей доступной модели на основе списка из API
   const pickBestModel = (modelsList) => {
     const names = modelsList.map(m => m);
-    // Предпочитаем 1.5-pro, затем 1.5-flash, затем gemini-pro
+    // Предпочитаем gemini-2.5-flash, затем gemini-2.0-flash
     const preferredOrder = [
-      'gemini-1.5-pro',
-      'gemini-1.5-pro-latest',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-pro'
+      'gemini-2.5-flash',
+      'gemini-2.0-flash'
     ];
     for (const pref of preferredOrder) {
       if (names.some(n => n === pref)) return pref;
@@ -48,7 +45,7 @@ function App() {
       const first = names[0];
       return first.includes('/') ? first.split('/').pop() : first;
     }
-    return 'gemini-pro';
+    return 'gemini-2.5-flash';
   };
 
   // Загружаем список доступных моделей (ListModels)
@@ -263,9 +260,8 @@ function App() {
                 })
               ) : provider === 'gemini' ? (
                 <>
-                  <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                  <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                  <option value="gemini-pro">gemini-pro</option>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                 </>
               ) : (
                 <>
