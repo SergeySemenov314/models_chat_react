@@ -239,7 +239,7 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>🤖 Gemini Chat</h1>
+        <h1>🤖 Models Chat React</h1>
         <div className="server-config">
           <label>
             Провайдер: 
