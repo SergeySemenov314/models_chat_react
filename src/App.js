@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
+import FileManager from './components/FileManager';
 
 function App() {
+  const [currentView, setCurrentView] = useState('chat'); // 'chat' | 'files'
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -195,7 +197,24 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>🤖 Models Chat React</h1>
+        <div className="header-top">
+          <h1>🤖 Models Chat React</h1>
+          <nav className="main-nav">
+            <button 
+              className={`nav-btn ${currentView === 'chat' ? 'active' : ''}`}
+              onClick={() => setCurrentView('chat')}
+            >
+              💬 Чат
+            </button>
+            <button 
+              className={`nav-btn ${currentView === 'files' ? 'active' : ''}`}
+              onClick={() => setCurrentView('files')}
+            >
+              📁 Файлы
+            </button>
+          </nav>
+        </div>
+        {currentView === 'chat' && (
         <div className="server-config">
           <label>
             Провайдер: 
@@ -256,8 +275,9 @@ function App() {
             Очистить чат
           </button>
         </div>
+        )}
         
-        {useSystemPrompt && showSystemPrompt && (
+        {currentView === 'chat' && useSystemPrompt && showSystemPrompt && (
           <div className="system-prompt-config">
             <label>
               Системный промпт (контекст для AI):
@@ -276,7 +296,9 @@ function App() {
         )}
       </header>
 
-      <main className="chat-container">
+      <main className={currentView === 'chat' ? 'chat-container' : 'files-container'}>
+        {currentView === 'chat' ? (
+        <div className="chat-content">
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome-message">
@@ -408,6 +430,10 @@ function App() {
             {isLoading ? '⏳' : '📤'}
           </button>
         </div>
+        </div>
+        ) : (
+          <FileManager />
+        )}
       </main>
     </div>
   );
