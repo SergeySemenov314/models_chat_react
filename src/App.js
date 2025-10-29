@@ -298,7 +298,7 @@ function App() {
 
       <main className={currentView === 'chat' ? 'chat-container' : 'files-container'}>
         {currentView === 'chat' ? (
-        <div className="chat-content">
+        <>
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome-message">
@@ -363,11 +363,13 @@ function App() {
           {messages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
               <div className="message-header">
-                <span className="role">
-                  {message.role === 'user' ? '👤 Вы' : 
-                   message.role === 'assistant' ? '🤖 AI' : '❌ Ошибка'}
-                </span>
-                <div className="message-actions">
+                <div className="message-header-left">
+                  <span className="role">
+                    {message.role === 'user' ? '👤 Вы' : 
+                     message.role === 'assistant' ? '🤖 AI' : '❌ Ошибка'}
+                  </span>
+                </div>
+                <div className="message-header-right">
                   <span className="timestamp">{formatTime(message.timestamp)}</span>
                   {message.role === 'assistant' && (
                     <button 
@@ -396,8 +398,12 @@ function App() {
           {isLoading && (
             <div className="message assistant loading">
               <div className="message-header">
-                <span className="role">🤖 AI </span>
-                <span className="timestamp">печатает...</span>
+                <div className="message-header-left">
+                  <span className="role">🤖 AI</span>
+                </div>
+                <div className="message-header-right">
+                  <span className="timestamp">печатает...</span>
+                </div>
               </div>
               <div className="message-content">
                 <div className="typing-indicator">
@@ -430,7 +436,7 @@ function App() {
             {isLoading ? '⏳' : '📤'}
           </button>
         </div>
-        </div>
+        </>
         ) : (
           <FileManager />
         )}

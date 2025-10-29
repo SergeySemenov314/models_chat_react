@@ -192,6 +192,7 @@
   width: 100%;
   padding: 1rem;
   min-height: 0;
+  height: 100%;
 }
 
 .files-container {
@@ -206,6 +207,9 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 0;
+  width: 100%;
+  align-items: flex-start;
 }
 
 .welcome-message {
@@ -272,6 +276,8 @@
 }
 
 .message {
+  display: inline-flex;
+  flex-direction: column;
   max-width: 80%;
   margin-bottom: 1rem;
   animation: slideIn 0.3s ease-out;
@@ -305,13 +311,29 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  width: 100%;
   font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .role {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}
+
+.message-header-left {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.message-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .message-actions {
@@ -348,6 +370,8 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  margin-bottom: 0.5rem;
 }
 
 .message.user .message-content {
@@ -367,11 +391,15 @@
 }
 
 .message-stats {
-  margin-top: 0.5rem;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.9);
   text-align: right;
   font-weight: 500;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+  align-self: flex-end;
 }
 
 .loading .message-content {
@@ -412,11 +440,12 @@
   display: flex;
   gap: 0.5rem;
   padding: 1rem;
-  margin-top: 1rem;
+  margin-top: auto;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 15px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 .input-container textarea {
