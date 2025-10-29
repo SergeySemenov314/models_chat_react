@@ -10,6 +10,7 @@ services:
     environment:
       # Переменные окружения для production
       - NODE_ENV=production
+      - REACT_APP_BACKEND_URL=http://localhost:3001
     restart: unless-stopped
     container_name: models-chat-react
     networks:
