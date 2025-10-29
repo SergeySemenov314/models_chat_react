@@ -336,27 +336,8 @@ function App() {
                   </button>
                 </div>
               )}
-              {provider === 'gemini' && (
-                <div className="api-key-help">
-                  <p>📝 Настройка Gemini API:</p>
-                  <ol>
-                    <li>Получите ключ на <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
-                    <li>Добавьте в <code>.env</code> бэкенда: <code>GEMINI_API_KEY=ваш_ключ</code></li>
-                    <li>Перезапустите бэкенд</li>
-                  </ol>
-                  <p>🆓 Бесплатный лимит: 15 запросов/мин, 1500 запросов/день</p>
-                </div>
-              )}
-              {provider === 'custom' && !customServerConfig.configured && (
-                <div className="api-key-help">
-                  <p>🛠 Настройка вашего сервера:</p>
-                  <ol>
-                    <li>Добавьте в <code>.env</code> бэкенда: <code>CUSTOM_SERVER_URL=http://localhost:11434</code></li>
-                    <li>(Опционально) <code>CUSTOM_MODEL=llama3.1:8b</code></li>
-                    <li>Перезапустите бэкенд</li>
-                  </ol>
-                </div>
-              )}
+             
+            
             </div>
           )}
 

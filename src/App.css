@@ -219,6 +219,9 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   backdrop-filter: blur(10px);
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .welcome-message h2 {
