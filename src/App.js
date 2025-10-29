@@ -1,23 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import './App.css';
 
 function App() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey] = useState(process.env.REACT_APP_GEMINI_API_KEY || '');
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const messagesEndRef = useRef(null);
   const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
-  const customServerUrl = process.env.REACT_APP_CUSTOM_SERVER_URL || '';
-  const customModel = process.env.REACT_APP_CUSTOM_MODEL || 'qwen2:0.5b';
   const [availableModels, setAvailableModels] = useState([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [modelsError, setModelsError] = useState('');
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const [customServerConfig, setCustomServerConfig] = useState({
+    configured: false,
+    defaultModel: 'qwen2:0.5b'
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,21 +49,39 @@ function App() {
     return 'gemini-2.5-flash';
   };
 
-  // Загружаем список доступных моделей (ListModels)
+  // Загружаем конфигурацию сервера
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const resp = await fetch(`${backendUrl}/api/chat/config`);
+        if (resp.ok) {
+          const config = await resp.json();
+          setCustomServerConfig({
+            configured: config.customServerConfigured,
+            defaultModel: config.defaultCustomModel
+          });
+        }
+      } catch (e) {
+        console.error('Config loading error:', e);
+      }
+    };
+
+    loadConfig();
+  }, [backendUrl]);
+
+  // Загружаем список доступных моделей через бэкенд
   useEffect(() => {
     const loadModels = async () => {
-      if (provider !== 'gemini' || !apiKey.trim()) return;
+      if (provider !== 'gemini') return;
       try {
         setModelsLoaded(false);
         setModelsError('');
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const resp = await fetch(`${backendUrl}/api/chat/models`);
         if (!resp.ok) {
-          throw new Error(`ListModels HTTP ${resp.status}`);
+          throw new Error(`Backend HTTP ${resp.status}`);
         }
         const json = await resp.json();
-        const models = (json.models || [])
-          .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-          .map(m => m.name); // имена в формате models/<name>
+        const models = json.models || [];
         setAvailableModels(models);
         setModelsLoaded(true);
 
@@ -76,20 +95,18 @@ function App() {
           }
         }
       } catch (e) {
-        console.error('ListModels error:', e);
+        console.error('Models loading error:', e);
         setModelsError(e.message || 'Не удалось получить список моделей');
         setModelsLoaded(true);
       }
     };
 
     loadModels();
-    // Загружаем при первом наличии ключа и при смене провайдера
-  }, [apiKey, selectedModel, provider]);
+    // Загружаем при смене провайдера
+  }, [selectedModel, provider, backendUrl]);
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
-    if (provider === 'gemini' && !apiKey.trim()) return;
-    if (provider === 'custom' && !customServerUrl.trim()) return;
 
     const userMessage = { role: 'user', content: inputValue, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
@@ -98,106 +115,48 @@ function App() {
     setIsLoading(true);
 
     try {
-      if (provider === 'gemini') {
-        // Инициализируем Gemini AI
-        const genAI = new GoogleGenerativeAI(apiKey);
+      // Подготавливаем сообщения для отправки на бэкенд
+      const chatMessages = [];
+      const recentMessages = messages.slice(-10).filter(msg => msg.role !== 'error');
+      chatMessages.push(...recentMessages.map(msg => ({ 
+        role: msg.role, 
+        content: msg.content 
+      })));
+      chatMessages.push({ role: 'user', content: currentInput });
 
-        // Если выбранная модель недоступна по данным ListModels — выберем лучшую доступную
-        let modelNameToUse = selectedModel;
-        if (availableModels.length > 0) {
-          const flatNames = availableModels.map(n => n.includes('/') ? n.split('/').pop() : n);
-          if (!flatNames.includes(modelNameToUse)) {
-            modelNameToUse = pickBestModel(availableModels);
-          }
-        }
+      // Подготавливаем данные для запроса
+      const requestData = {
+        provider: provider,
+        model: provider === 'gemini' ? selectedModel : customServerConfig.defaultModel,
+        messages: chatMessages,
+        systemPrompt: useSystemPrompt ? systemPrompt : undefined
+      };
 
-        let model = genAI.getGenerativeModel({ model: modelNameToUse });
+      // Отправляем запрос на бэкенд
+      const resp = await fetch(`${backendUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
 
-        // Подготавливаем историю для чата
-        let prompt = '';
-        if (useSystemPrompt && systemPrompt.trim()) {
-          prompt += `Системная инструкция: ${systemPrompt}\n\n`;
-        }
-        const recentMessages = messages.slice(-10).filter(msg => msg.role !== 'error');
-        recentMessages.forEach(msg => {
-          const roleLabel = msg.role === 'assistant' ? 'AI' : 'Пользователь';
-          prompt += `${roleLabel}: ${msg.content}\n`;
-        });
-        prompt += `Пользователь: ${currentInput}\nAI: `;
-
-        let result;
-        try {
-          result = await model.generateContent(prompt);
-        } catch (err) {
-          const isNotFound = (err && (String(err.message || err).includes('404') || String(err.message || err).includes('not found')));
-          if (isNotFound && availableModels.length > 0) {
-            const fallback = pickBestModel(availableModels);
-            if (fallback && fallback !== modelNameToUse) {
-              modelNameToUse = fallback;
-              setSelectedModel(fallback);
-              model = genAI.getGenerativeModel({ model: modelNameToUse });
-              result = await model.generateContent(prompt);
-            } else {
-              throw err;
-            }
-          } else {
-            throw err;
-          }
-        }
-        const response = await result.response;
-        const text = response.text();
-
-        const aiMessage = { 
-          role: 'assistant', 
-          content: text, 
-          timestamp: new Date(),
-          stats: {
-            model: modelNameToUse,
-            promptTokens: response.usageMetadata?.promptTokenCount || 0,
-            responseTokens: response.usageMetadata?.candidatesTokenCount || 0,
-            totalTokens: response.usageMetadata?.totalTokenCount || 0
-          }
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        // Кастомный сервер (совместим с /api/chat)
-        const chatMessages = [];
-        if (useSystemPrompt && systemPrompt.trim()) {
-          chatMessages.push({ role: 'system', content: systemPrompt });
-        }
-        const recentMessages = messages.slice(-10).filter(msg => msg.role !== 'error');
-        chatMessages.push(...recentMessages.map(msg => ({ role: msg.role, content: msg.content })));
-        chatMessages.push({ role: 'user', content: currentInput });
-
-        const resp = await fetch(`${customServerUrl.replace(/\/$/, '')}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: customModel, messages: chatMessages, stream: false })
-        });
-        if (!resp.ok) {
-          const errorData = await resp.text();
-          throw new Error(`Custom server HTTP ${resp.status}: ${errorData}`);
-        }
-        const data = await resp.json();
-        const content = data?.message?.content || data?.content || '';
-        const aiMessage = {
-          role: 'assistant',
-          content: content,
-          timestamp: new Date(),
-          stats: {
-            model: customModel,
-            totalTokens: data?.usage?.total_tokens || data?.eval_count || 0,
-            promptTokens: data?.usage?.prompt_tokens || 0,
-            responseTokens: data?.usage?.completion_tokens || 0
-          }
-        };
-        setMessages(prev => [...prev, aiMessage]);
+      if (!resp.ok) {
+        const errorData = await resp.text();
+        throw new Error(`Backend HTTP ${resp.status}: ${errorData}`);
       }
+
+      const data = await resp.json();
+      const aiMessage = {
+        role: 'assistant',
+        content: data.content,
+        timestamp: new Date(),
+        stats: data.stats
+      };
+      setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Ошибка:', error);
       const errorMessage = { 
         role: 'error', 
-        content: `Ошибка Gemini API: ${error.message}`, 
+        content: `Ошибка: ${error.message}`, 
         timestamp: new Date() 
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -265,12 +224,12 @@ function App() {
                 </>
               ) : (
                 <>
-                  <option value={customModel}>{customModel}</option>
+                  <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
                 </>
               )}
             </select>
           </label>
-          {provider === 'gemini' && !modelsLoaded && apiKey.trim() && (
+          {provider === 'gemini' && !modelsLoaded && (
             <div className="models-warning">Загружаю список моделей…</div>
           )}
           {provider === 'gemini' && modelsError && (
@@ -321,15 +280,13 @@ function App() {
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome-message">
-              <h2>Добро пожаловать в Gemini Chat!</h2>
+              <h2>Добро пожаловать в Models Chat!</h2>
               <p>
-                {apiKey.trim() 
-                  ? (useSystemPrompt 
-                      ? 'Google Gemini готов к работе с настроенным контекстом' 
-                      : 'Google Gemini готов помочь вам. Начните диалог!')
-                  : '⚠️ Настройте API ключ в файле .env для начала работы'}
+                {useSystemPrompt 
+                  ? `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов к работе с настроенным контекстом` 
+                  : `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов помочь вам. Начните диалог!`}
               </p>
-              {apiKey.trim() && useSystemPrompt && (
+              {useSystemPrompt && (
                 <div className="system-prompt-status active">
                   ✅ Системный промпт активен
                   {!showSystemPrompt && (
@@ -339,12 +296,12 @@ function App() {
                   )}
                 </div>
               )}
-              {apiKey.trim() && !useSystemPrompt && (
+              {!useSystemPrompt && (
                 <div className="system-prompt-status inactive">
                   ℹ️ Системный промпт отключен - AI работает без дополнительного контекста
                 </div>
               )}
-              {(provider === 'gemini' ? apiKey.trim() : customServerUrl.trim()) && (
+              {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
                 <div className="example-prompts">
                   <button onClick={() => setInputValue('Привет! Как дела?')}>
                     Привет! Как дела?
@@ -357,25 +314,24 @@ function App() {
                   </button>
                 </div>
               )}
-              {provider === 'gemini' && !apiKey.trim() && (
+              {provider === 'gemini' && (
                 <div className="api-key-help">
-                  <p>📝 Настройка API ключа:</p>
+                  <p>📝 Настройка Gemini API:</p>
                   <ol>
                     <li>Получите ключ на <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
-                    <li>Создайте файл <code>.env</code> в корне проекта</li>
-                    <li>Добавьте: <code>REACT_APP_GEMINI_API_KEY=ваш_ключ</code></li>
-                    <li>Перезапустите приложение</li>
+                    <li>Добавьте в <code>.env</code> бэкенда: <code>GEMINI_API_KEY=ваш_ключ</code></li>
+                    <li>Перезапустите бэкенд</li>
                   </ol>
                   <p>🆓 Бесплатный лимит: 15 запросов/мин, 1500 запросов/день</p>
                 </div>
               )}
-              {provider === 'custom' && !customServerUrl.trim() && (
+              {provider === 'custom' && !customServerConfig.configured && (
                 <div className="api-key-help">
                   <p>🛠 Настройка вашего сервера:</p>
                   <ol>
-                    <li>Добавьте в <code>.env</code>: <code>REACT_APP_CUSTOM_SERVER_URL=https://your-domain.tld:11434</code></li>
-                    <li>(Опционально) <code>REACT_APP_CUSTOM_MODEL=llama3.1:8b</code></li>
-                    <li>Перезапустите приложение</li>
+                    <li>Добавьте в <code>.env</code> бэкенда: <code>CUSTOM_SERVER_URL=http://localhost:11434</code></li>
+                    <li>(Опционально) <code>CUSTOM_MODEL=llama3.1:8b</code></li>
+                    <li>Перезапустите бэкенд</li>
                   </ol>
                 </div>
               )}
@@ -445,9 +401,9 @@ function App() {
           />
           <button 
             onClick={sendMessage} 
-            disabled={!inputValue.trim() || isLoading || (provider === 'gemini' ? !apiKey.trim() : !customServerUrl.trim())}
+            disabled={!inputValue.trim() || isLoading || (provider === 'custom' && !customServerConfig.configured)}
             className="send-btn"
-            title={(provider === 'gemini' ? (!apiKey.trim() ? 'Настройте API ключ в .env' : 'Отправить сообщение') : (!customServerUrl.trim() ? 'Укажите REACT_APP_CUSTOM_SERVER_URL в .env' : 'Отправить сообщение'))}
+            title={(provider === 'custom' && !customServerConfig.configured ? 'Настройте кастомный сервер в .env бэкенда' : 'Отправить сообщение')}
           >
             {isLoading ? '⏳' : '📤'}
           </button>
