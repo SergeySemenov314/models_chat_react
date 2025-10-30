@@ -11,6 +11,7 @@ function App() {
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+  const [useRag, setUseRag] = useState(false);
   const messagesEndRef = useRef(null);
   const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
   const [availableModels, setAvailableModels] = useState([]);
@@ -131,7 +132,8 @@ function App() {
         provider: provider,
         model: provider === 'gemini' ? selectedModel : customServerConfig.defaultModel,
         messages: chatMessages,
-        systemPrompt: useSystemPrompt ? systemPrompt : undefined
+        systemPrompt: useSystemPrompt ? systemPrompt : undefined,
+        useRag: useRag
       };
 
       // Отправляем запрос на бэкенд
@@ -151,7 +153,8 @@ function App() {
         role: 'assistant',
         content: data.content,
         timestamp: new Date(),
-        stats: data.stats
+        stats: data.stats,
+        sources: data.sources
       };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
@@ -262,6 +265,14 @@ function App() {
             />
             Использовать системный промпт
           </label>
+          <label className="rag-toggle">
+            <input 
+              type="checkbox" 
+              checked={useRag}
+              onChange={(e) => setUseRag(e.target.checked)}
+            />
+            🔍 Поиск по документам (RAG)
+          </label>
           {useSystemPrompt && (
             <button 
               onClick={() => setShowSystemPrompt(!showSystemPrompt)}
@@ -371,6 +382,23 @@ function App() {
                   🤖 {message.stats.model} | 
                   📝 {message.stats.totalTokens} токенов 
                   ({message.stats.promptTokens} вход + {message.stats.responseTokens} ответ)
+                </div>
+              )}
+              {message.sources && message.sources.length > 0 && (
+                <div className="message-sources">
+                  <strong>📚 Источники:</strong>
+                  <ul>
+                    {message.sources.map((source, idx) => (
+                      <li key={idx}>
+                        📄 {source.document} 
+                        {source.similarity && (
+                          <span className="similarity">
+                            (релевантность: {Math.round(source.similarity * 100)}%)
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

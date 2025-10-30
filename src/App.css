@@ -141,6 +141,19 @@
   cursor: pointer;
 }
 
+.rag-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.rag-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
 .system-prompt-config {
   margin-top: 1rem;
   padding: 1rem;
@@ -403,6 +416,41 @@
   border-radius: 8px;
   backdrop-filter: blur(5px);
   align-self: flex-end;
+  margin-top: 0.5rem;
+}
+
+.message-sources {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(76, 175, 80, 0.2);
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  border-left: 3px solid #4caf50;
+  margin-top: 0.5rem;
+  align-self: flex-start;
+}
+
+.message-sources strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #fff;
+}
+
+.message-sources ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  list-style: none;
+}
+
+.message-sources li {
+  margin: 0.2rem 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message-sources .similarity {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 0.5rem;
 }
 
 .loading .message-content {
