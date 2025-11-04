@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import FileManager from './components/FileManager';
+import ChatSidebar from './components/ChatSidebar';
 
 function App() {
   const [currentView, setCurrentView] = useState('chat'); // 'chat' | 'files'
@@ -9,7 +10,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
-  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [useRag, setUseRag] = useState(true);
   const messagesEndRef = useRef(null);
   const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
@@ -199,108 +199,11 @@ function App() {
 
   return (
     <div className="App">
-      <header className="app-header">
-        <div className="header-top">
-          <h1>🤖 Models Chat React</h1>
-          <nav className="main-nav">
-            <button 
-              className={`nav-btn ${currentView === 'chat' ? 'active' : ''}`}
-              onClick={() => setCurrentView('chat')}
-            >
-              💬 Чат
-            </button>
-            <button 
-              className={`nav-btn ${currentView === 'files' ? 'active' : ''}`}
-              onClick={() => setCurrentView('files')}
-            >
-              📁 Файлы
-            </button>
-          </nav>
-        </div>
-        {currentView === 'chat' && (
-        <div className="server-config">
-          <label>
-            Провайдер: 
-            <select value={provider} onChange={(e) => setProvider(e.target.value)}>
-              <option value="gemini">Google Gemini</option>
-              <option value="custom">Мой сервер</option>
-            </select>
-          </label>
-          <label>
-            Модель: 
-            <select 
-              value={selectedModel} 
-              onChange={(e) => setSelectedModel(e.target.value)}
-            >
-              {provider === 'gemini' && availableModels.length > 0 ? (
-                availableModels.map((m) => {
-                  const short = m.includes('/') ? m.split('/').pop() : m;
-                  return (
-                    <option key={m} value={short}>{short}</option>
-                  );
-                })
-              ) : provider === 'gemini' ? (
-                <>
-                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                </>
-              ) : (
-                <>
-                  <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
-                </>
-              )}
-            </select>
-          </label>
-          {provider === 'gemini' && !modelsLoaded && (
-            <div className="models-warning">Загружаю список моделей…</div>
-          )}
-          {provider === 'gemini' && modelsError && (
-            <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
-          )}
-          <label className="rag-toggle">
-            <input 
-              type="checkbox" 
-              checked={useRag}
-              onChange={(e) => setUseRag(e.target.checked)}
-            />
-            🔍 Search for answers in files
-          </label>
-          <button 
-            onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-            className="toggle-prompt-btn"
-            type="button"
-          >
-            {showSystemPrompt ? '🔼 Hide Default Context' : '🔽 Configure Default Context'}
-          </button>
-          <button onClick={clearChat} className="clear-btn">
-            Start New Chat
-          </button>
-        </div>
-        )}
-        
-        {currentView === 'chat' && showSystemPrompt && (
-          <div className="system-prompt-config">
-            <label>
-              Default Context (AI context):
-              <textarea
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                placeholder="Enter contextual information for the AI model..."
-                rows="3"
-                className="system-prompt-textarea"
-              />
-            </label>
-            <div className="system-prompt-info">
-              💡 Default Context helps AI understand the context and role in the conversation
-            </div>
-          </div>
-        )}
-      </header>
-
       <main className={currentView === 'chat' ? 'chat-container' : 'files-container'}>
         {currentView === 'chat' ? (
-        <>
-        <div className="messages">
+        <div className="chat-layout">
+          <div className="chat-content">
+            <div className="messages">
           {messages.length === 0 && (
             <div className="welcome-message">
               <h2>Добро пожаловать в Models Chat!</h2>
@@ -312,11 +215,6 @@ function App() {
               {systemPrompt.trim() && (
                 <div className="system-prompt-status active">
                   ✅ Default Context active
-                  {!showSystemPrompt && (
-                    <div style={{fontSize: '0.8em', marginTop: '0.3rem', opacity: 0.95}}>
-                      "{systemPrompt.length > 50 ? systemPrompt.substring(0, 50) + '...' : systemPrompt}"
-                    </div>
-                  )}
                 </div>
               )}
               {!systemPrompt.trim() && (
@@ -334,6 +232,9 @@ function App() {
                   </button>
                   <button onClick={() => setInputValue('Объясни квантовую физику простыми словами')}>
                     Объясни квантовую физику просто
+                  </button>
+                  <button onClick={() => setInputValue('Какие компоненты включает RAG система?')}>
+                    Какие компоненты включает RAG система?
                   </button>
                 </div>
               )}
@@ -415,27 +316,43 @@ function App() {
           )}
           
           <div ref={messagesEndRef} />
-        </div>
+            </div>
 
-        <div className="input-container">
-          <textarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Введите ваше сообщение... (Enter для отправки)"
-            disabled={isLoading}
-            rows="3"
+            <div className="input-container">
+              <textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Введите ваше сообщение... (Enter для отправки)"
+                disabled={isLoading}
+                rows="3"
+              />
+              <button 
+                onClick={sendMessage} 
+                disabled={!inputValue.trim() || isLoading || (provider === 'custom' && !customServerConfig.configured)}
+                className="send-btn"
+                title={(provider === 'custom' && !customServerConfig.configured ? 'Настройте кастомный сервер в .env бэкенда' : 'Отправить сообщение')}
+              >
+                {isLoading ? '⏳' : '📤'}
+              </button>
+            </div>
+          </div>
+
+          <ChatSidebar
+            clearChat={clearChat}
+            provider={provider}
+            setProvider={setProvider}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            availableModels={availableModels}
+            modelsLoaded={modelsLoaded}
+            modelsError={modelsError}
+            systemPrompt={systemPrompt}
+            setSystemPrompt={setSystemPrompt}
+            useRag={useRag}
+            setUseRag={setUseRag}
           />
-          <button 
-            onClick={sendMessage} 
-            disabled={!inputValue.trim() || isLoading || (provider === 'custom' && !customServerConfig.configured)}
-            className="send-btn"
-            title={(provider === 'custom' && !customServerConfig.configured ? 'Настройте кастомный сервер в .env бэкенда' : 'Отправить сообщение')}
-          >
-            {isLoading ? '⏳' : '📤'}
-          </button>
         </div>
-        </>
         ) : (
           <FileManager />
         )}
