@@ -9,7 +9,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
-  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [useRag, setUseRag] = useState(false);
   const messagesEndRef = useRef(null);
@@ -128,11 +127,12 @@ function App() {
       chatMessages.push({ role: 'user', content: currentInput });
 
       // Подготавливаем данные для запроса
+      // Default Context отправляется только если поле заполнено
       const requestData = {
         provider: provider,
         model: provider === 'gemini' ? selectedModel : customServerConfig.defaultModel,
         messages: chatMessages,
-        systemPrompt: useSystemPrompt ? systemPrompt : undefined,
+        systemPrompt: systemPrompt.trim() ? systemPrompt.trim() : undefined,
         useRag: useRag
       };
 
@@ -257,14 +257,6 @@ function App() {
           {provider === 'gemini' && modelsError && (
             <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
           )}
-          <label className="system-prompt-toggle">
-            <input 
-              type="checkbox" 
-              checked={useSystemPrompt}
-              onChange={(e) => setUseSystemPrompt(e.target.checked)}
-            />
-            Использовать системный промпт
-          </label>
           <label className="rag-toggle">
             <input 
               type="checkbox" 
@@ -273,35 +265,33 @@ function App() {
             />
             🔍 Поиск по документам (RAG)
           </label>
-          {useSystemPrompt && (
-            <button 
-              onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-              className="toggle-prompt-btn"
-              type="button"
-            >
-              {showSystemPrompt ? '🔼 Скрыть промпт' : '🔽 Настроить промпт'}
-            </button>
-          )}
+          <button 
+            onClick={() => setShowSystemPrompt(!showSystemPrompt)}
+            className="toggle-prompt-btn"
+            type="button"
+          >
+            {showSystemPrompt ? '🔼 Hide Default Context' : '🔽 Configure Default Context'}
+          </button>
           <button onClick={clearChat} className="clear-btn">
             Очистить чат
           </button>
         </div>
         )}
         
-        {currentView === 'chat' && useSystemPrompt && showSystemPrompt && (
+        {currentView === 'chat' && showSystemPrompt && (
           <div className="system-prompt-config">
             <label>
-              Системный промпт (контекст для AI):
+              Default Context (AI context):
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                placeholder="Введите контекстную информацию для AI модели..."
+                placeholder="Enter contextual information for the AI model..."
                 rows="3"
                 className="system-prompt-textarea"
               />
             </label>
             <div className="system-prompt-info">
-              💡 Системный промпт помогает AI понимать контекст и роль в разговоре
+              💡 Default Context helps AI understand the context and role in the conversation
             </div>
           </div>
         )}
@@ -315,55 +305,36 @@ function App() {
             <div className="welcome-message">
               <h2>Добро пожаловать в Models Chat!</h2>
               <p>
-                {useSystemPrompt 
+                {systemPrompt.trim()
                   ? `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов к работе с настроенным контекстом` 
                   : `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов помочь вам. Начните диалог!`}
               </p>
-              {useSystemPrompt && (
+              {systemPrompt.trim() && (
                 <div className="system-prompt-status active">
-                  ✅ Системный промпт активен
+                  ✅ Default Context active
                   {!showSystemPrompt && (
-                    <div style={{fontSize: '0.8em', marginTop: '0.3rem', opacity: 0.8}}>
+                    <div style={{fontSize: '0.8em', marginTop: '0.3rem', opacity: 0.95}}>
                       "{systemPrompt.length > 50 ? systemPrompt.substring(0, 50) + '...' : systemPrompt}"
                     </div>
                   )}
                 </div>
               )}
-              {!useSystemPrompt && (
+              {!systemPrompt.trim() && (
                 <div className="system-prompt-status inactive">
-                  ℹ️ Системный промпт отключен - AI работает без дополнительного контекста
+                  ℹ️ Default Context not set - AI works without additional context
                 </div>
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
                 <div className="example-prompts">
-                  {!useRag ? (
-                    <>
-                      <button onClick={() => setInputValue('Привет! Как дела?')}>
-                        Привет! Как дела?
-                      </button>
-                      <button onClick={() => setInputValue('Помоги мне написать код на Python')}>
-                        Помоги написать код на Python
-                      </button>
-                      <button onClick={() => setInputValue('Объясни квантовую физику простыми словами')}>
-                        Объясни квантовую физику просто
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => setInputValue('Что такое RAG система?')}>
-                        🔍 Что такое RAG система?
-                      </button>
-                      <button onClick={() => setInputValue('Какие компоненты RAG системы?')}>
-                        🔍 Какие компоненты RAG системы?
-                      </button>
-                      <button onClick={() => setInputValue('Какие форматы файлов поддерживает система?')}>
-                        🔍 Какие форматы файлов поддерживает система?
-                      </button>
-                      <button onClick={() => setInputValue('Как использовать RAG в чате?')}>
-                        🔍 Как использовать RAG в чате?
-                      </button>
-                    </>
-                  )}
+                  <button onClick={() => setInputValue('Привет! Как дела?')}>
+                    Привет! Как дела?
+                  </button>
+                  <button onClick={() => setInputValue('Помоги мне написать код на Python')}>
+                    Помоги написать код на Python
+                  </button>
+                  <button onClick={() => setInputValue('Объясни квантовую физику простыми словами')}>
+                    Объясни квантовую физику просто
+                  </button>
                 </div>
               )}
              

@@ -256,15 +256,15 @@
 }
 
 .system-prompt-status.active {
-  background: rgba(76, 175, 80, 0.2);
-  color: #2e7d32;
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(76, 175, 80, 0.3);
+  color: #ffffff;
+  border: 1px solid rgba(76, 175, 80, 0.5);
 }
 
 .system-prompt-status.inactive {
-  background: rgba(33, 150, 243, 0.2);
-  color: #1565c0;
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background: rgba(33, 150, 243, 0.3);
+  color: #ffffff;
+  border: 1px solid rgba(33, 150, 243, 0.5);
 }
 
 .example-prompts {
