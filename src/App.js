@@ -273,7 +273,7 @@ function App() {
             {showSystemPrompt ? '🔼 Hide Default Context' : '🔽 Configure Default Context'}
           </button>
           <button onClick={clearChat} className="clear-btn">
-            Очистить чат
+            Start New Chat
           </button>
         </div>
         )}

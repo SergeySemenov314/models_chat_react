@@ -114,7 +114,7 @@
 }
 
 .clear-btn {
-  background: #ff6b6b;
+  background: #4caf50;
   color: white;
   border: none;
   padding: 0.4rem 0.8rem;
@@ -125,7 +125,7 @@
 }
 
 .clear-btn:hover {
-  background: #ff5252;
+  background: #45a049;
 }
 
 .system-prompt-toggle {
