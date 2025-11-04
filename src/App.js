@@ -10,7 +10,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
-  const [useRag, setUseRag] = useState(false);
+  const [useRag, setUseRag] = useState(true);
   const messagesEndRef = useRef(null);
   const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
   const [availableModels, setAvailableModels] = useState([]);
@@ -263,7 +263,7 @@ function App() {
               checked={useRag}
               onChange={(e) => setUseRag(e.target.checked)}
             />
-            🔍 Поиск по документам (RAG)
+            🔍 Search for answers in files
           </label>
           <button 
             onClick={() => setShowSystemPrompt(!showSystemPrompt)}
