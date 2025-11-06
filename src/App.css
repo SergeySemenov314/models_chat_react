@@ -82,6 +82,10 @@
   gap: 0.5rem;
 }
 
+.sidebar-section:has(.clear-btn) {
+  margin-bottom: 1rem;
+}
+
 .sidebar-label {
   display: flex;
   flex-direction: column;
@@ -140,6 +144,25 @@
   padding: 20px 15px;
   margin-bottom: 0;
   border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-upload-zone .upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sidebar-upload-zone .upload-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
 }
 
 .sidebar-upload-zone .upload-icon {
@@ -150,10 +173,12 @@
 .sidebar-upload-zone .upload-zone p {
   font-size: 0.9rem;
   margin: 5px 0;
+  text-align: center;
 }
 
 .sidebar-upload-zone .upload-zone small {
   font-size: 0.75rem;
+  text-align: center;
 }
 
 .files-section {
@@ -790,6 +815,7 @@
   border-radius: 3px;
   overflow: hidden;
   margin: 10px 0;
+  align-self: stretch;
 }
 
 .sidebar-upload-zone .progress-fill {
@@ -802,6 +828,7 @@
 .sidebar-upload-zone .upload-progress p {
   font-size: 0.8rem;
   margin: 5px 0 0 0;
+  text-align: center;
 }
 
 /* Sidebar scrollbar */

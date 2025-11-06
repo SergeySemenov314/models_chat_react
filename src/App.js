@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
-import FileManager from './components/FileManager';
 import ChatSidebar from './components/ChatSidebar';
 
 function App() {
-  const [currentView, setCurrentView] = useState('chat'); // 'chat' | 'files'
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -203,8 +201,7 @@ function App() {
 
   return (
     <div className="App">
-      <main className={currentView === 'chat' ? 'chat-container' : 'files-container'}>
-        {currentView === 'chat' ? (
+      <main className="chat-container">
         <div className="chat-layout">
           <div className="chat-content">
             <div className="messages">
@@ -359,9 +356,6 @@ function App() {
             setUseRag={setUseRag}
           />
         </div>
-        ) : (
-          <FileManager />
-        )}
       </main>
     </div>
   );
