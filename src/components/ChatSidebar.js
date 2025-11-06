@@ -226,9 +226,6 @@ const ChatSidebar = ({
             )}
           </select>
         </label>
-        {provider === 'gemini' && !modelsLoaded && (
-          <div className="models-warning">Загружаю список моделей…</div>
-        )}
         {provider === 'gemini' && modelsError && (
           <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
         )}
