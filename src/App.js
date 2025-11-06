@@ -209,9 +209,7 @@ function App() {
             <div className="welcome-message">
               <h2>Добро пожаловать в Models Chat!</h2>
               <p>
-                {useSystemPrompt && systemPrompt.trim()
-                  ? `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов к работе с настроенным контекстом` 
-                  : `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов помочь вам. Начните диалог!`}
+                {`${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов помочь вам. Начните диалог!`}
               </p>
               {useSystemPrompt && systemPrompt.trim() && (
                 <div className="system-prompt-status active">
@@ -220,7 +218,17 @@ function App() {
               )}
               {(!useSystemPrompt || !systemPrompt.trim()) && (
                 <div className="system-prompt-status inactive">
-                  ℹ️ Default Context {!useSystemPrompt ? 'disabled' : 'not set'} - AI works without additional context
+                  ℹ️ Default Context {!useSystemPrompt ? 'disabled' : 'not set'}
+                </div>
+              )}
+              {useRag && (
+                <div className="system-prompt-status active">
+                  ✅ Search for answers in files active
+                </div>
+              )}
+              {!useRag && (
+                <div className="system-prompt-status inactive">
+                  ℹ️ Search for answers in files disabled
                 </div>
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
