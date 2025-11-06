@@ -107,13 +107,16 @@ function App() {
     // Загружаем при смене провайдера
   }, [selectedModel, provider, backendUrl]);
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const sendMessage = async (messageText = null) => {
+    const textToSend = messageText || inputValue;
+    if (!textToSend.trim() || isLoading) return;
 
-    const userMessage = { role: 'user', content: inputValue, timestamp: new Date() };
+    const userMessage = { role: 'user', content: textToSend, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = inputValue;
-    setInputValue('');
+    const currentInput = textToSend;
+    if (!messageText) {
+      setInputValue('');
+    }
     setIsLoading(true);
 
     try {
@@ -224,17 +227,17 @@ function App() {
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
                 <div className="example-prompts">
-                  <button onClick={() => setInputValue('Привет! Как дела?')}>
+                  <button onClick={() => sendMessage('Привет! Как дела?')}>
                     Привет! Как дела?
                   </button>
-                  <button onClick={() => setInputValue('Помоги мне написать код на Python')}>
-                    Помоги написать код на Python
-                  </button>
-                  <button onClick={() => setInputValue('Объясни квантовую физику простыми словами')}>
+                  <button onClick={() => sendMessage('Объясни квантовую физику простыми словами')}>
                     Объясни квантовую физику просто
                   </button>
-                  <button onClick={() => setInputValue('Какие компоненты включает RAG система?')}>
-                    Какие компоненты включает RAG система?
+                  <button onClick={() => sendMessage('Какие компоненты включает RAG система?')} title="Тест поиска по документам" style={{ fontWeight: '600' }}>
+                    📄 [RAG Test] Какие компоненты включает RAG система?
+                  </button>
+                  <button onClick={() => sendMessage('Какие форматы документов поддерживает система?')} title="Тест поиска по документам" style={{ fontWeight: '600' }}>
+                    📄 [RAG Test] Какие форматы документов поддерживает система?
                   </button>
                 </div>
               )}
