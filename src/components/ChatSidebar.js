@@ -235,7 +235,7 @@ const ChatSidebar = ({
       </div>
 
       <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Default Context</h3>
+        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Default Context</h3>
         <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
           <input 
             type="checkbox" 
@@ -255,8 +255,8 @@ const ChatSidebar = ({
       </div>
 
       <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>File Management</h3>
-        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>File Management</h3>
+        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
           <input 
             type="checkbox" 
             checked={useRag}
@@ -282,7 +282,7 @@ const ChatSidebar = ({
               multiple
               onChange={handleFileSelect}
               style={{ display: 'none' }}
-              accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx"
+              accept=".pdf,.doc,.docx"
             />
             
             {uploading ? (
@@ -298,8 +298,8 @@ const ChatSidebar = ({
             ) : (
               <div className="upload-content">
                 <div className="upload-icon">📤</div>
-                <p>Перетащите файлы сюда или нажмите для выбора</p>
-                <small>Поддерживаемые форматы: изображения, PDF, документы</small>
+                <p>Перетащите или выберите файлы</p>
+                <small>Форматы: PDF и документы Word</small>
               </div>
             )}
           </div>
