@@ -243,6 +243,7 @@
   flex-shrink: 0;
 }
 
+.file-item-download,
 .file-item-delete {
   background: none;
   border: none;
@@ -253,6 +254,7 @@
   transition: opacity 0.2s;
 }
 
+.file-item-download:hover,
 .file-item-delete:hover {
   opacity: 1;
 }

@@ -12,6 +12,8 @@ const ChatSidebar = ({
   modelsError,
   systemPrompt,
   setSystemPrompt,
+  useSystemPrompt,
+  setUseSystemPrompt,
   useRag,
   setUseRag
 }) => {
@@ -108,6 +110,15 @@ const ChatSidebar = ({
       setUploading(false);
       setUploadProgress(0);
     }
+  };
+
+  const downloadFile = (fileId, fileName) => {
+    const link = document.createElement('a');
+    link.href = `${backendUrl}/api/files/${fileId}/download`;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const deleteFile = async (fileId) => {
@@ -225,12 +236,21 @@ const ChatSidebar = ({
 
       <div className="sidebar-section">
         <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Default Context</h3>
+        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <input 
+            type="checkbox" 
+            checked={useSystemPrompt}
+            onChange={(e) => setUseSystemPrompt(e.target.checked)}
+          />
+          <span> Use Default Context</span>
+        </label>
         <textarea
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
           placeholder="Enter contextual information for the AI model..."
           rows="3"
           className="sidebar-textarea"
+          disabled={!useSystemPrompt}
         />
       </div>
 
@@ -242,7 +262,7 @@ const ChatSidebar = ({
             checked={useRag}
             onChange={(e) => setUseRag(e.target.checked)}
           />
-          <span>🔍 Search for answers in files</span>
+          <span>Search for answers in files</span>
         </label>
       </div>
 
@@ -286,13 +306,8 @@ const ChatSidebar = ({
         </div>
       </div>
 
-      <div className="sidebar-section files-section">
-        <div className="files-header">
-          <h3>Загруженные файлы</h3>
-          <button onClick={loadFiles} className="refresh-btn" disabled={filesLoading}>
-            {filesLoading ? '⏳' : '🔄'}
-          </button>
-        </div>
+      <div className="sidebar-section files-section" style={{ marginTop: '0.5rem' }}>
+        <h3 style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: '#666', fontSize: '0.875rem', fontWeight: '400' }}>Загруженные файлы</h3>
 
         {filesLoading && files.length === 0 ? (
           <div className="loading">Загрузка файлов...</div>
@@ -318,6 +333,13 @@ const ChatSidebar = ({
                   </div>
                 </div>
                 <div className="file-item-actions">
+                  <button
+                    onClick={() => downloadFile(file.id, file.originalName)}
+                    className="file-item-download"
+                    title="Скачать файл"
+                  >
+                    ⬇️
+                  </button>
                   <button
                     onClick={() => deleteFile(file.id)}
                     className="file-item-delete"

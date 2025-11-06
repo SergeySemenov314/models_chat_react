@@ -10,6 +10,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
+  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [useRag, setUseRag] = useState(true);
   const messagesEndRef = useRef(null);
   const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
@@ -130,12 +131,12 @@ function App() {
       chatMessages.push({ role: 'user', content: currentInput });
 
       // Подготавливаем данные для запроса
-      // Default Context отправляется только если поле заполнено
+      // Default Context отправляется только если поле заполнено и чекбокс включен
       const requestData = {
         provider: provider,
         model: provider === 'gemini' ? selectedModel : customServerConfig.defaultModel,
         messages: chatMessages,
-        systemPrompt: systemPrompt.trim() ? systemPrompt.trim() : undefined,
+        systemPrompt: (useSystemPrompt && systemPrompt.trim()) ? systemPrompt.trim() : undefined,
         useRag: useRag
       };
 
@@ -211,18 +212,18 @@ function App() {
             <div className="welcome-message">
               <h2>Добро пожаловать в Models Chat!</h2>
               <p>
-                {systemPrompt.trim()
+                {useSystemPrompt && systemPrompt.trim()
                   ? `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов к работе с настроенным контекстом` 
                   : `${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов помочь вам. Начните диалог!`}
               </p>
-              {systemPrompt.trim() && (
+              {useSystemPrompt && systemPrompt.trim() && (
                 <div className="system-prompt-status active">
                   ✅ Default Context active
                 </div>
               )}
-              {!systemPrompt.trim() && (
+              {(!useSystemPrompt || !systemPrompt.trim()) && (
                 <div className="system-prompt-status inactive">
-                  ℹ️ Default Context not set - AI works without additional context
+                  ℹ️ Default Context {!useSystemPrompt ? 'disabled' : 'not set'} - AI works without additional context
                 </div>
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
@@ -326,7 +327,7 @@ function App() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Введите ваше сообщение... (Enter для отправки)"
+                placeholder="Введите ваше сообщение..."
                 disabled={isLoading}
                 rows="3"
               />
@@ -352,6 +353,8 @@ function App() {
             modelsError={modelsError}
             systemPrompt={systemPrompt}
             setSystemPrompt={setSystemPrompt}
+            useSystemPrompt={useSystemPrompt}
+            setUseSystemPrompt={setUseSystemPrompt}
             useRag={useRag}
             setUseRag={setUseRag}
           />
