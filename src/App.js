@@ -239,11 +239,11 @@ function App() {
                   <button onClick={() => sendMessage('Объясни квантовую физику простыми словами')}>
                     Объясни квантовую физику просто
                   </button>
-                  <button onClick={() => sendMessage('Какие компоненты включает RAG система?')} title="Тест поиска по документам" style={{ fontWeight: '600' }}>
-                    📄 [RAG Test] Какие компоненты включает RAG система?
+                  <button onClick={() => sendMessage('What components does the RAG system include?')} title="Document search test" style={{ fontWeight: '600' }}>
+                    📄 [RAG Test] What components does the RAG system include?
                   </button>
-                  <button onClick={() => sendMessage('Какие форматы документов поддерживает система?')} title="Тест поиска по документам" style={{ fontWeight: '600' }}>
-                    📄 [RAG Test] Какие форматы документов поддерживает система?
+                  <button onClick={() => sendMessage('What document formats does the system support?')} title="Document search test" style={{ fontWeight: '600' }}>
+                    📄 [RAG Test] What document formats does the system support?
                   </button>
                 </div>
               )}
