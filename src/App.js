@@ -107,8 +107,10 @@ function App() {
   }, [selectedModel, provider, backendUrl]);
 
   const sendMessage = async (messageText = null) => {
-    const textToSend = messageText || inputValue;
-    if (!textToSend.trim() || isLoading) return;
+    // Normalize argument: React passes click event to handlers bound directly
+    const normalizedArg = typeof messageText === 'string' ? messageText : null;
+    const textToSend = normalizedArg ?? inputValue;
+    if (typeof textToSend !== 'string' || !textToSend.trim() || isLoading) return;
 
     const userMessage = { role: 'user', content: textToSend, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
@@ -344,7 +346,7 @@ function App() {
                 rows="3"
               />
               <button 
-                onClick={sendMessage} 
+                onClick={() => sendMessage()} 
                 disabled={!inputValue.trim() || isLoading || (provider === 'custom' && !customServerConfig.configured)}
                 className="send-btn"
                 title={(provider === 'custom' && !customServerConfig.configured ? 'Настройте кастомный сервер в .env бэкенда' : 'Отправить сообщение')}
