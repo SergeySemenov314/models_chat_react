@@ -88,9 +88,8 @@
 }
 
 .sidebar-section.files-section {
-  flex-shrink: 1;
-  flex: 1;
-  min-height: 0;
+  /* Секция с файлами ведёт себя как обычный блок и не делит высоту с нижними секциями */
+  flex: 0 0 auto;
 }
 
 .sidebar-section:has(.clear-btn) {
@@ -193,8 +192,7 @@
 }
 
 .files-section {
-  flex: 1;
-  min-height: 0;
+  /* Вспомогательный класс для секции файлов, без жёстких ограничений по высоте */
   display: flex;
   flex-direction: column;
 }
