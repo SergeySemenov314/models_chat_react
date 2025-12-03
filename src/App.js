@@ -159,6 +159,13 @@ function App() {
         sources: data.sources
       };
       setMessages(prev => [...prev, aiMessage]);
+
+      // Если ответ пришел от другой модели (после fallback на бэкенде),
+      // выбираем её в селекте, чтобы следующие запросы шли через неё
+      const respondedModel = data?.stats?.model;
+      if (provider === 'gemini' && respondedModel && respondedModel !== selectedModel) {
+        setSelectedModel(respondedModel);
+      }
     } catch (error) {
       console.error('Ошибка:', error);
       const errorMessage = { 
