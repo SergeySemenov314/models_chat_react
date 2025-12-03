@@ -239,7 +239,7 @@ const ChatSidebar = ({
             checked={useSystemPrompt}
             onChange={(e) => setUseSystemPrompt(e.target.checked)}
           />
-          <span> Use Default Context</span>
+          <span> Use System Context</span>
         </label>
         <textarea
           value={systemPrompt}

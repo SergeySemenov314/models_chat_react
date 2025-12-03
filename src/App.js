@@ -129,7 +129,7 @@ function App() {
       chatMessages.push({ role: 'user', content: currentInput });
 
       // Подготавливаем данные для запроса
-      // Default Context отправляется только если поле заполнено и чекбокс включен
+      // System Context отправляется только если поле заполнено и чекбокс включен
       const requestData = {
         provider: provider,
         model: provider === 'gemini' ? selectedModel : customServerConfig.defaultModel,
@@ -213,12 +213,12 @@ function App() {
               </p>
               {useSystemPrompt && systemPrompt.trim() && (
                 <div className="system-prompt-status active">
-                  ✅ Default Context active
+                  ✅ System Context active
                 </div>
               )}
               {(!useSystemPrompt || !systemPrompt.trim()) && (
                 <div className="system-prompt-status inactive">
-                  ℹ️ Default Context {!useSystemPrompt ? 'disabled' : 'not set'}
+                  ℹ️ System Context {!useSystemPrompt ? 'disabled' : 'not set'}
                 </div>
               )}
               {useRag && (
