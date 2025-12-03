@@ -190,68 +190,6 @@ const ChatSidebar = ({
       </div>
 
       <div className="sidebar-section">
-        <label className="sidebar-label">
-          Провайдер:
-          <select value={provider} onChange={(e) => setProvider(e.target.value)} className="sidebar-select">
-            <option value="gemini">Google Gemini</option>
-            <option value="custom">Мой сервер</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="sidebar-section">
-        <label className="sidebar-label">
-          Модель:
-          <select 
-            value={selectedModel} 
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="sidebar-select"
-          >
-            {provider === 'gemini' && availableModels.length > 0 ? (
-              availableModels.map((m) => {
-                const short = m.includes('/') ? m.split('/').pop() : m;
-                return (
-                  <option key={m} value={short}>{short}</option>
-                );
-              })
-            ) : provider === 'gemini' ? (
-              <>
-                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-              </>
-            ) : (
-              <>
-                <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
-              </>
-            )}
-          </select>
-        </label>
-        {provider === 'gemini' && modelsError && (
-          <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
-        )}
-      </div>
-
-      <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>System Context</h3>
-        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <input 
-            type="checkbox" 
-            checked={useSystemPrompt}
-            onChange={(e) => setUseSystemPrompt(e.target.checked)}
-          />
-          <span> Use System Context</span>
-        </label>
-        <textarea
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder="Enter contextual information for the AI model..."
-          rows="3"
-          className="sidebar-textarea"
-          disabled={!useSystemPrompt}
-        />
-      </div>
-
-      <div className="sidebar-section">
         <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Search in files</h3>
         <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
           <input 
@@ -348,6 +286,70 @@ const ChatSidebar = ({
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+     
+
+      <div className="sidebar-section">
+        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>System Context</h3>
+        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <input 
+            type="checkbox" 
+            checked={useSystemPrompt}
+            onChange={(e) => setUseSystemPrompt(e.target.checked)}
+          />
+          <span> Use System Context</span>
+        </label>
+        <textarea
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          placeholder="Enter contextual information for the AI model..."
+          rows="3"
+          className="sidebar-textarea"
+          disabled={!useSystemPrompt}
+        />
+      </div>
+
+      <div className="sidebar-section">
+        <label className="sidebar-label">
+          Провайдер:
+          <select value={provider} onChange={(e) => setProvider(e.target.value)} className="sidebar-select">
+            <option value="gemini">Google Gemini</option>
+            <option value="custom">Мой сервер</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="sidebar-section">
+        <label className="sidebar-label">
+          Модель:
+          <select 
+            value={selectedModel} 
+            onChange={(e) => setSelectedModel(e.target.value)}
+            className="sidebar-select"
+          >
+            {provider === 'gemini' && availableModels.length > 0 ? (
+              availableModels.map((m) => {
+                const short = m.includes('/') ? m.split('/').pop() : m;
+                return (
+                  <option key={m} value={short}>{short}</option>
+                );
+              })
+            ) : provider === 'gemini' ? (
+              <>
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              </>
+            ) : (
+              <>
+                <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
+              </>
+            )}
+          </select>
+        </label>
+        {provider === 'gemini' && modelsError && (
+          <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
         )}
       </div>
     </aside>
