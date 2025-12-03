@@ -232,7 +232,7 @@ const ChatSidebar = ({
       </div>
 
       <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Default Context</h3>
+        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>System Context</h3>
         <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
           <input 
             type="checkbox" 
@@ -252,7 +252,7 @@ const ChatSidebar = ({
       </div>
 
       <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>File Management</h3>
+        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Search in files</h3>
         <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
           <input 
             type="checkbox" 
