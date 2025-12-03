@@ -15,7 +15,7 @@ function App() {
   const [availableModels, setAvailableModels] = useState([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [modelsError, setModelsError] = useState('');
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
   const [customServerConfig, setCustomServerConfig] = useState({
     configured: false,
     defaultModel: 'qwen2:0.5b'

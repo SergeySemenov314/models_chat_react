@@ -18,7 +18,7 @@ const ChatSidebar = ({
   setUseRag
 }) => {
   const fileInputRef = useRef(null);
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
   
   // Custom server config state
   const [customServerConfig, setCustomServerConfig] = useState({
