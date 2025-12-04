@@ -20,6 +20,19 @@ function App() {
     configured: false,
     defaultModel: 'qwen2:0.5b'
   });
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  // Handle Escape key to close sidebar
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && sidebarVisible) {
+        setSidebarVisible(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [sidebarVisible]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -211,6 +224,14 @@ function App() {
   return (
     <div className="App">
       <main className="chat-container">
+        <button 
+          className="sidebar-toggle-btn"
+          onClick={() => setSidebarVisible(!sidebarVisible)}
+          aria-label="Toggle sidebar"
+        >
+          {sidebarVisible ? '✕' : '☰'}
+        </button>
+        {sidebarVisible && <div className="sidebar-overlay" onClick={() => setSidebarVisible(false)}></div>}
         <div className="chat-layout">
           <div className="chat-content">
             <div className="messages">
@@ -371,6 +392,8 @@ function App() {
             setUseSystemPrompt={setUseSystemPrompt}
             useRag={useRag}
             setUseRag={setUseRag}
+            isVisible={sidebarVisible}
+            onClose={() => setSidebarVisible(false)}
           />
         </div>
       </main>

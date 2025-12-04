@@ -69,15 +69,46 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 15px;
+  /* padding removed, moved to scroll container */
+  display: flex;
+  flex-direction: column;
+  /* gap removed, moved to scroll container */
+  /* overflow removed here to allow external button visibility */
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  position: relative; /* For absolute positioning context */
+}
+
+.sidebar-scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
   padding-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
+}
+
+/* External close button for mobile */
+.sidebar-close-btn-external {
+  display: none; /* Hidden on desktop */
+  position: absolute;
+  top: 1rem;
+  left: -3.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  color: #666;
+  font-size: 1.2rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  backdrop-filter: blur(10px);
+  z-index: 1002;
 }
 
 .sidebar-section {
@@ -841,22 +872,70 @@
 }
 
 /* Sidebar scrollbar */
-.chat-sidebar::-webkit-scrollbar {
+.sidebar-scroll-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.chat-sidebar::-webkit-scrollbar-track {
+.sidebar-scroll-container::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 3px;
 }
 
-.chat-sidebar::-webkit-scrollbar-thumb {
+.sidebar-scroll-container::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
 
-.chat-sidebar::-webkit-scrollbar-thumb:hover {
+.sidebar-scroll-container::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle-btn {
+  display: none; /* Hidden by default on desktop */
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1001;
+  background: rgba(255, 255, 255, 0.9);
+  border: none; /* Убираем границу для чистоты */
+  border-radius: 50%; /* Делаем круглой */
+  width: 2.5rem; /* Уменьшаем размер */
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #667eea;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Плавная анимация */
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 1);
+}
+
+/* Sidebar overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px); /* Размытие фона */
+  z-index: 999;
+  opacity: 0;
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }
 
 /* Responsive design */
@@ -876,17 +955,52 @@
   }
   
   .chat-layout {
-    flex-direction: column;
+    flex-direction: row;
+    position: relative;
+  }
+  
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
   }
   
   .chat-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0; /* Move sidebar to the left */
+    right: auto;
+    width: 85%;
+    max-width: 350px;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%); /* Start off-screen left */
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    order: 0;
+    max-height: none;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2); /* Shadow to the right */
+    background: rgba(255, 255, 255, 0.98);
+    will-change: transform;
+    touch-action: pan-y;
+    padding-top: 0;
+    overflow: visible;
+    border-radius: 0; /* Remove rounded corners on mobile */
+  }
+  
+  .chat-sidebar.visible {
+    transform: translateX(0);
+  }
+  
+  .chat-content {
     width: 100%;
-    max-height: 400px;
-    order: -1;
+    max-width: none;
   }
   
   .chat-container {
     padding: 0.5rem;
+    padding-top: 3.5rem; /* Space for toggle button */
   }
   
   .message {

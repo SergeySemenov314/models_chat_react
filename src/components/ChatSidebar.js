@@ -15,11 +15,40 @@ const ChatSidebar = ({
   useSystemPrompt,
   setUseSystemPrompt,
   useRag,
-  setUseRag
+  setUseRag,
+  isVisible,
+  onClose
 }) => {
   const fileInputRef = useRef(null);
   const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
   
+  // Touch handling for swipe to close
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance (in px) required
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null); // Reset touch end
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance; // Swipe left to close (drag to left)
+
+    if (isLeftSwipe) {
+      onClose();
+    }
+  };
+
   // Custom server config state
   const [customServerConfig, setCustomServerConfig] = useState({
     configured: false,
@@ -182,173 +211,180 @@ const ChatSidebar = ({
   };
 
   return (
-    <aside className="chat-sidebar">
-      <div className="sidebar-section">
-        <button onClick={clearChat} className="clear-btn sidebar-btn">
-          Start New Chat
-        </button>
-      </div>
+    <aside 
+      className={`chat-sidebar ${isVisible ? 'visible' : ''}`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="sidebar-scroll-container">
+        <div className="sidebar-section">
+          <button onClick={clearChat} className="clear-btn sidebar-btn">
+            Start New Chat
+          </button>
+        </div>
 
-      <div className="sidebar-section">
-        <label className="sidebar-label">
-          Provider:
-          <select value={provider} onChange={(e) => setProvider(e.target.value)} className="sidebar-select">
-            <option value="gemini">Google Gemini</option>
-            <option value="custom">My Server</option>
-          </select>
-        </label>
-      </div>
+        <div className="sidebar-section">
+          <label className="sidebar-label">
+            Provider:
+            <select value={provider} onChange={(e) => setProvider(e.target.value)} className="sidebar-select">
+              <option value="gemini">Google Gemini</option>
+              <option value="custom">My Server</option>
+            </select>
+          </label>
+        </div>
 
-      <div className="sidebar-section">
-        <label className="sidebar-label">
-          Model:
-          <select 
-            value={selectedModel} 
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="sidebar-select"
-          >
-            {provider === 'gemini' && availableModels.length > 0 ? (
-              availableModels.map((m) => {
-                const short = m.includes('/') ? m.split('/').pop() : m;
-                return (
-                  <option key={m} value={short}>{short}</option>
-                );
-              })
-            ) : provider === 'gemini' ? (
-              <>
-                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-              </>
-            ) : (
-              <>
-                <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
-              </>
-            )}
-          </select>
-        </label>
-        {provider === 'gemini' && modelsError && (
-          <div className="models-error">Failed to get models list: {modelsError}</div>
-        )}
-      </div>
+        <div className="sidebar-section">
+          <label className="sidebar-label">
+            Model:
+            <select 
+              value={selectedModel} 
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="sidebar-select"
+            >
+              {provider === 'gemini' && availableModels.length > 0 ? (
+                availableModels.map((m) => {
+                  const short = m.includes('/') ? m.split('/').pop() : m;
+                  return (
+                    <option key={m} value={short}>{short}</option>
+                  );
+                })
+              ) : provider === 'gemini' ? (
+                <>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                </>
+              ) : (
+                <>
+                  <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
+                </>
+              )}
+            </select>
+          </label>
+          {provider === 'gemini' && modelsError && (
+            <div className="models-error">Failed to get models list: {modelsError}</div>
+          )}
+        </div>
 
-      <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>System Context</h3>
-        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <input 
-            type="checkbox" 
-            checked={useSystemPrompt}
-            onChange={(e) => setUseSystemPrompt(e.target.checked)}
-          />
-          <span> Use System Context</span>
-        </label>
-        <textarea
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder="Enter contextual information for the AI model..."
-          rows="3"
-          className="sidebar-textarea"
-          disabled={!useSystemPrompt}
-        />
-      </div>
-
-      <div className="sidebar-section">
-        <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Search in files</h3>
-        <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-          <input 
-            type="checkbox" 
-            checked={useRag}
-            onChange={(e) => setUseRag(e.target.checked)}
-          />
-          <span>Search for answers in files</span>
-        </label>
-      </div>
-
-      <div className="sidebar-section">
-        <div className="sidebar-upload-zone">
-          <div 
-            className={`upload-zone ${dragActive ? 'drag-active' : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleFileSelect}
-              style={{ display: 'none' }}
-              accept=".pdf,.doc,.docx"
+        <div className="sidebar-section">
+          <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>System Context</h3>
+          <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              checked={useSystemPrompt}
+              onChange={(e) => setUseSystemPrompt(e.target.checked)}
             />
-            
-            {uploading ? (
-              <div className="upload-progress">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
+            <span> Use System Context</span>
+          </label>
+          <textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            placeholder="Enter contextual information for the AI model..."
+            rows="3"
+            className="sidebar-textarea"
+            disabled={!useSystemPrompt}
+          />
+        </div>
+
+        <div className="sidebar-section">
+          <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Search in files</h3>
+          <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+            <input 
+              type="checkbox" 
+              checked={useRag}
+              onChange={(e) => setUseRag(e.target.checked)}
+            />
+            <span>Search for answers in files</span>
+          </label>
+        </div>
+
+        <div className="sidebar-section">
+          <div className="sidebar-upload-zone">
+            <div 
+              className={`upload-zone ${dragActive ? 'drag-active' : ''}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+                accept=".pdf,.doc,.docx"
+              />
+              
+              {uploading ? (
+                <div className="upload-progress">
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p>Uploading... {uploadProgress}%</p>
                 </div>
-                <p>Uploading... {uploadProgress}%</p>
-              </div>
-            ) : (
-              <div className="upload-content">
-                <div className="upload-icon">📤</div>
-                <p>Drag or select files</p>
-                <small>Formats: PDF and Word documents</small>
-              </div>
-            )}
+              ) : (
+                <div className="upload-content">
+                  <div className="upload-icon">📤</div>
+                  <p>Drag or select files</p>
+                  <small>Formats: PDF and Word documents</small>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="sidebar-section files-section" style={{ marginTop: '0.5rem' }}>
-        <h3 style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: '#666', fontSize: '0.875rem', fontWeight: '400' }}>Uploaded files</h3>
+        <div className="sidebar-section files-section" style={{ marginTop: '0.5rem' }}>
+          <h3 style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: '#666', fontSize: '0.875rem', fontWeight: '400' }}>Uploaded files</h3>
 
-        {filesLoading && files.length === 0 ? (
-          <div className="loading">Loading files...</div>
-        ) : files.length === 0 ? (
-          <div className="no-files">
-            <p>No files found</p>
-            <small>Upload your first file</small>
-          </div>
-        ) : (
-          <div className="files-list">
-            {files.map((file) => (
-              <div key={file.id} className="file-item">
-                <div className="file-item-icon">
-                  {getFileIcon(file.mimetype)}
-                </div>
-                <div className="file-item-info">
-                  <div className="file-item-name" title={file.originalName}>
-                    {file.originalName}
+          {filesLoading && files.length === 0 ? (
+            <div className="loading">Loading files...</div>
+          ) : files.length === 0 ? (
+            <div className="no-files">
+              <p>No files found</p>
+              <small>Upload your first file</small>
+            </div>
+          ) : (
+            <div className="files-list">
+              {files.map((file) => (
+                <div key={file.id} className="file-item">
+                  <div className="file-item-icon">
+                    {getFileIcon(file.mimetype)}
                   </div>
-                  <div className="file-item-details">
-                    <span className="file-item-size">{file.formattedSize}</span>
-                    <span className="file-item-date">{formatDate(file.uploadedAt)}</span>
+                  <div className="file-item-info">
+                    <div className="file-item-name" title={file.originalName}>
+                      {file.originalName}
+                    </div>
+                    <div className="file-item-details">
+                      <span className="file-item-size">{file.formattedSize}</span>
+                      <span className="file-item-date">{formatDate(file.uploadedAt)}</span>
+                    </div>
+                  </div>
+                  <div className="file-item-actions">
+                    <button
+                      onClick={() => downloadFile(file.id, file.originalName)}
+                      className="file-item-download"
+                      title="Download file"
+                    >
+                      ⬇️
+                    </button>
+                    <button
+                      onClick={() => deleteFile(file.id)}
+                      className="file-item-delete"
+                      title="Delete file"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
-                <div className="file-item-actions">
-                  <button
-                    onClick={() => downloadFile(file.id, file.originalName)}
-                    className="file-item-download"
-                    title="Download file"
-                  >
-                    ⬇️
-                  </button>
-                  <button
-                    onClick={() => deleteFile(file.id)}
-                    className="file-item-delete"
-                    title="Delete file"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );
