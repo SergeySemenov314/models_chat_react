@@ -341,7 +341,7 @@ function App() {
                   <span className="role">🤖 AI</span>
                 </div>
                 <div className="message-header-right">
-                  <span className="timestamp">typing...</span>
+                  <span className="timestamp"> typing...</span>
                 </div>
               </div>
               <div className="message-content">
