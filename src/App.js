@@ -7,7 +7,7 @@ function App() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
-  const [systemPrompt, setSystemPrompt] = useState('Вы полезный AI-ассистент, который отвечает на вопросы пользователей четко и информативно.');
+  const [systemPrompt, setSystemPrompt] = useState('You are a helpful AI assistant that answers user questions clearly and informatively.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [useRag, setUseRag] = useState(true);
   const messagesEndRef = useRef(null);
@@ -97,7 +97,7 @@ function App() {
         }
       } catch (e) {
         console.error('Models loading error:', e);
-        setModelsError(e.message || 'Не удалось получить список моделей');
+        setModelsError(e.message || 'Failed to get models list');
         setModelsLoaded(true);
       }
     };
@@ -115,7 +115,7 @@ function App() {
     const userMessage = { role: 'user', content: textToSend, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
     const currentInput = textToSend;
-    if (!messageText) {
+    if (!normalizedArg) {
       setInputValue('');
     }
     setIsLoading(true);
@@ -169,10 +169,10 @@ function App() {
         setSelectedModel(respondedModel);
       }
     } catch (error) {
-      console.error('Ошибка:', error);
+      console.error('Error:', error);
       const errorMessage = { 
         role: 'error', 
-        content: `Ошибка: ${error.message}`, 
+        content: `Error: ${error.message}`, 
         timestamp: new Date() 
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -201,10 +201,10 @@ function App() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
-      // Можно добавить уведомление о копировании
-      console.log('Текст скопирован!');
+      // Could add copy notification
+      console.log('Text copied!');
     }).catch(err => {
-      console.error('Ошибка копирования:', err);
+      console.error('Copy error:', err);
     });
   };
 
@@ -216,9 +216,9 @@ function App() {
             <div className="messages">
           {messages.length === 0 && (
             <div className="welcome-message">
-              <h2>Добро пожаловать в Models Chat!</h2>
+              <h2>Welcome to Models Chat!</h2>
               <p>
-                {`${provider === 'gemini' ? 'Google Gemini' : 'Ваш сервер'} готов помочь вам. Начните диалог!`}
+                {`${provider === 'gemini' ? 'Google Gemini' : 'Your server'} is ready to help you. Start the conversation!`}
               </p>
               {useSystemPrompt && systemPrompt.trim() && (
                 <div className="system-prompt-status active">
@@ -242,11 +242,11 @@ function App() {
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
                 <div className="example-prompts">
-                  <button onClick={() => sendMessage('Привет! Как дела?')}>
-                    Привет! Как дела?
+                  <button onClick={() => sendMessage('Hello! How are you?')}>
+                    Hello! How are you?
                   </button>
-                  <button onClick={() => sendMessage('Объясни квантовую физику простыми словами')}>
-                    Объясни квантовую физику просто
+                  <button onClick={() => sendMessage('Explain quantum physics in simple terms')}>
+                    Explain quantum physics simply
                   </button>
                   <button onClick={() => sendMessage('What components does the RAG system include?')} title="Document search test" style={{ fontWeight: '600' }}>
                     📄 [RAG Test] What components does the RAG system include?
@@ -266,8 +266,8 @@ function App() {
               <div className="message-header">
                 <div className="message-header-left">
                   <span className="role">
-                    {message.role === 'user' ? '👤 Вы' : 
-                     message.role === 'assistant' ? '🤖 AI' : '❌ Ошибка'}
+                    {message.role === 'user' ? '👤 You' : 
+                     message.role === 'assistant' ? '🤖 AI' : '❌ Error'}
                   </span>
                 </div>
                 <div className="message-header-right">
@@ -276,7 +276,7 @@ function App() {
                     <button 
                       className="copy-btn" 
                       onClick={() => copyToClipboard(message.content)}
-                      title="Копировать ответ"
+                      title="Copy response"
                     >
                       📋
                     </button>
@@ -289,20 +289,20 @@ function App() {
               {message.stats && (
                 <div className="message-stats">
                   🤖 {message.stats.model} | 
-                  📝 {message.stats.totalTokens} токенов 
-                  ({message.stats.promptTokens} вход + {message.stats.responseTokens} ответ)
+                  📝 {message.stats.totalTokens} tokens 
+                  ({message.stats.promptTokens} input + {message.stats.responseTokens} output)
                 </div>
               )}
               {message.sources && message.sources.length > 0 && (
                 <div className="message-sources">
-                  <strong>📚 Источники:</strong>
+                  <strong>📚 Sources:</strong>
                   <ul>
                     {message.sources.map((source, idx) => (
                       <li key={idx}>
                         📄 {source.document} 
                         {source.similarity && (
                           <span className="similarity">
-                            (релевантность: {Math.round(source.similarity * 100)}%)
+                            (relevance: {Math.round(source.similarity * 100)}%)
                           </span>
                         )}
                       </li>
@@ -320,7 +320,7 @@ function App() {
                   <span className="role">🤖 AI</span>
                 </div>
                 <div className="message-header-right">
-                  <span className="timestamp">печатает...</span>
+                  <span className="timestamp">typing...</span>
                 </div>
               </div>
               <div className="message-content">
@@ -341,7 +341,7 @@ function App() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Введите ваше сообщение..."
+                placeholder="Enter your message..."
                 disabled={isLoading}
                 rows="3"
               />
@@ -349,7 +349,7 @@ function App() {
                 onClick={() => sendMessage()} 
                 disabled={!inputValue.trim() || isLoading || (provider === 'custom' && !customServerConfig.configured)}
                 className="send-btn"
-                title={(provider === 'custom' && !customServerConfig.configured ? 'Настройте кастомный сервер в .env бэкенда' : 'Отправить сообщение')}
+                title={(provider === 'custom' && !customServerConfig.configured ? 'Configure custom server in backend .env' : 'Send message')}
               >
                 {isLoading ? '⏳' : '📤'}
               </button>

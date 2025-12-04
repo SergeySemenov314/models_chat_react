@@ -122,7 +122,7 @@ const ChatSidebar = ({
   };
 
   const deleteFile = async (fileId) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этот файл?')) {
+    if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
     try {
@@ -191,17 +191,17 @@ const ChatSidebar = ({
 
       <div className="sidebar-section">
         <label className="sidebar-label">
-          Провайдер:
+          Provider:
           <select value={provider} onChange={(e) => setProvider(e.target.value)} className="sidebar-select">
             <option value="gemini">Google Gemini</option>
-            <option value="custom">Мой сервер</option>
+            <option value="custom">My Server</option>
           </select>
         </label>
       </div>
 
       <div className="sidebar-section">
         <label className="sidebar-label">
-          Модель:
+          Model:
           <select 
             value={selectedModel} 
             onChange={(e) => setSelectedModel(e.target.value)}
@@ -227,7 +227,7 @@ const ChatSidebar = ({
           </select>
         </label>
         {provider === 'gemini' && modelsError && (
-          <div className="models-error">Не удалось получить список моделей: {modelsError}</div>
+          <div className="models-error">Failed to get models list: {modelsError}</div>
         )}
       </div>
 
@@ -290,13 +290,13 @@ const ChatSidebar = ({
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p>Загрузка... {uploadProgress}%</p>
+                <p>Uploading... {uploadProgress}%</p>
               </div>
             ) : (
               <div className="upload-content">
                 <div className="upload-icon">📤</div>
-                <p>Перетащите или выберите файлы</p>
-                <small>Форматы: PDF и документы Word</small>
+                <p>Drag or select files</p>
+                <small>Formats: PDF and Word documents</small>
               </div>
             )}
           </div>
@@ -304,14 +304,14 @@ const ChatSidebar = ({
       </div>
 
       <div className="sidebar-section files-section" style={{ marginTop: '0.5rem' }}>
-        <h3 style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: '#666', fontSize: '0.875rem', fontWeight: '400' }}>Загруженные файлы</h3>
+        <h3 style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: '#666', fontSize: '0.875rem', fontWeight: '400' }}>Uploaded files</h3>
 
         {filesLoading && files.length === 0 ? (
-          <div className="loading">Загрузка файлов...</div>
+          <div className="loading">Loading files...</div>
         ) : files.length === 0 ? (
           <div className="no-files">
-            <p>Файлы не найдены</p>
-            <small>Загрузите первый файл</small>
+            <p>No files found</p>
+            <small>Upload your first file</small>
           </div>
         ) : (
           <div className="files-list">
@@ -333,14 +333,14 @@ const ChatSidebar = ({
                   <button
                     onClick={() => downloadFile(file.id, file.originalName)}
                     className="file-item-download"
-                    title="Скачать файл"
+                    title="Download file"
                   >
                     ⬇️
                   </button>
                   <button
                     onClick={() => deleteFile(file.id)}
                     className="file-item-delete"
-                    title="Удалить файл"
+                    title="Delete file"
                   >
                     🗑️
                   </button>
