@@ -219,7 +219,13 @@ const ChatSidebar = ({
     >
       <div className="sidebar-scroll-container">
         <div className="sidebar-section">
-          <button onClick={clearChat} className="clear-btn sidebar-btn">
+          <button 
+            onClick={() => {
+              clearChat();
+              onClose();
+            }} 
+            className="clear-btn sidebar-btn"
+          >
             Start New Chat
           </button>
         </div>
