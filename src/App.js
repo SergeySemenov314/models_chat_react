@@ -263,18 +263,18 @@ function App() {
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
                 <div className="example-prompts">
+                   <button onClick={() => sendMessage('In what year was the first artificial neural network created and who were its creators?')} title="Document search test" style={{ fontWeight: '600' }}>
+                    📄 [RAG Test] In what year was the first artificial neural network created and who were its creators?
+                  </button>
+                  <button onClick={() => sendMessage('What components does the RAG system include?')} title="Document search test" style={{ fontWeight: '600' }}>
+                    📄 [RAG Test] What components does the RAG system include?
+                  </button>  
                   <button onClick={() => sendMessage('Hello! How are you?')}>
                     Hello! How are you?
                   </button>
                   <button onClick={() => sendMessage('Explain quantum physics in simple terms')}>
                     Explain quantum physics simply
-                  </button>
-                  <button onClick={() => sendMessage('What components does the RAG system include?')} title="Document search test" style={{ fontWeight: '600' }}>
-                    📄 [RAG Test] What components does the RAG system include?
-                  </button>
-                  <button onClick={() => sendMessage('What document formats does the system support?')} title="Document search test" style={{ fontWeight: '600' }}>
-                    📄 [RAG Test] What document formats does the system support?
-                  </button>
+                  </button>            
                 </div>
               )}
              
