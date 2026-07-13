@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import '../App.css';
 
+// Файлы, защищённые от удаления из UI (используются как тестовые документы для RAG)
+const PROTECTED_FILE_NAMES = ['Text about AI.docx', 'text about RAG.txt'];
+const isProtectedFile = (originalName) =>
+  PROTECTED_FILE_NAMES.some(name => name.toLowerCase() === (originalName || '').toLowerCase());
+
 const ChatSidebar = ({
   clearChat,
   provider,
@@ -379,13 +384,15 @@ const ChatSidebar = ({
                     >
                       ⬇️
                     </button>
-                    <button
-                      onClick={() => deleteFile(file.id)}
-                      className="file-item-delete"
-                      title="Delete file"
-                    >
-                      🗑️
-                    </button>
+                    {!isProtectedFile(file.originalName) && (
+                      <button
+                        onClick={() => deleteFile(file.id)}
+                        className="file-item-delete"
+                        title="Delete file"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

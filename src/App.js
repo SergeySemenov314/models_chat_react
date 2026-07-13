@@ -264,12 +264,12 @@ function App() {
               )}
               {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
                 <div className="example-prompts">
-                   <button onClick={() => sendMessage('In what year was the first artificial neural network created and who were its creators?')} title="Document search test" style={{ fontWeight: '600' }}>
+                   <button onClick={() => sendMessage('In what year was the first artificial neural network created and who were its creators? (Answer in English)')} title="Document search test" style={{ fontWeight: '600' }}>
                     📄 [RAG Test] In what year was the first artificial neural network created and who were its creators?
                   </button>
-                  <button onClick={() => sendMessage('What components does the RAG system include?')} title="Document search test" style={{ fontWeight: '600' }}>
+                  <button onClick={() => sendMessage('What components does the RAG system include? (Answer in English)')} title="Document search test" style={{ fontWeight: '600' }}>
                     📄 [RAG Test] What components does the RAG system include?
-                  </button>  
+                  </button>
                   <button onClick={() => sendMessage('Hello! How are you?')}>
                     Hello! How are you?
                   </button>
