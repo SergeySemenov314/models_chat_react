@@ -6,7 +6,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash-lite');
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful AI assistant that answers user questions clearly and informatively.');
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [useRag, setUseRag] = useState(true);
@@ -45,8 +45,9 @@ function App() {
   // Выбор лучшей доступной модели на основе списка из API
   const pickBestModel = (modelsList) => {
     const names = modelsList.map(m => m);
-    // Предпочитаем gemini-2.5-flash, затем gemini-2.0-flash
+    // Предпочитаем модели с бесплатной квотой (у Gemini 2.0-* free tier сейчас = 0)
     const preferredOrder = [
+      'gemini-2.5-flash-lite',
       'gemini-2.5-flash',
       'gemini-2.0-flash'
     ];
@@ -60,7 +61,7 @@ function App() {
       const first = names[0];
       return first.includes('/') ? first.split('/').pop() : first;
     }
-    return 'gemini-2.5-flash';
+    return 'gemini-2.5-flash-lite';
   };
 
   // Загружаем конфигурацию сервера

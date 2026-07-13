@@ -257,6 +257,7 @@ const ChatSidebar = ({
                 })
               ) : provider === 'gemini' ? (
                 <>
+                  <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
                   <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                   <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                 </>
