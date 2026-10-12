@@ -1,26 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import '../App.css';
 
-// Файлы, защищённые от удаления из UI (используются как тестовые документы для RAG)
+// Тестовые документы RAG всегда доступны и не удаляются из интерфейса.
 const PROTECTED_FILE_NAMES = ['Text about AI.docx', 'text about RAG.txt'];
 const isProtectedFile = (originalName) =>
   PROTECTED_FILE_NAMES.some(name => name.toLowerCase() === (originalName || '').toLowerCase());
 
 const ChatSidebar = ({
   clearChat,
-  provider,
-  setProvider,
-  selectedModel,
-  setSelectedModel,
-  availableModels,
-  modelsLoaded,
-  modelsError,
-  systemPrompt,
-  setSystemPrompt,
-  useSystemPrompt,
-  setUseSystemPrompt,
-  useRag,
-  setUseRag,
   isVisible,
   onClose
 }) => {
@@ -54,38 +41,13 @@ const ChatSidebar = ({
     }
   };
 
-  // Custom server config state
-  const [customServerConfig, setCustomServerConfig] = useState({
-    configured: false,
-    defaultModel: 'qwen2:0.5b'
-  });
-
-  // Load custom server config
-  useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const resp = await fetch(`${backendUrl}/api/chat/config`);
-        if (resp.ok) {
-          const config = await resp.json();
-          setCustomServerConfig({
-            configured: config.customServerConfigured,
-            defaultModel: config.defaultCustomModel
-          });
-        }
-      } catch (e) {
-        console.error('Config loading error:', e);
-      }
-    };
-
-    loadConfig();
-  }, [backendUrl]);
-  
   // File management state
   const [files, setFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [fileError, setFileError] = useState('');
 
   // File management functions
   const loadFiles = useCallback(async () => {
@@ -99,6 +61,7 @@ const ChatSidebar = ({
       setFiles(data.files || []);
     } catch (err) {
       console.error('Error loading files:', err);
+      setFileError('Не удалось получить список файлов с сервера.');
     } finally {
       setFilesLoading(false);
     }
@@ -108,7 +71,14 @@ const ChatSidebar = ({
     loadFiles();
   }, [loadFiles]);
 
+  useEffect(() => {
+    if (!files.some(file => file.indexStatus === 'pending')) return;
+    const timer = window.setInterval(loadFiles, 5000);
+    return () => window.clearInterval(timer);
+  }, [files, loadFiles]);
+
   const uploadFile = async (file) => {
+    setFileError('');
     setUploading(true);
     setUploadProgress(0);
     const formData = new FormData();
@@ -126,13 +96,25 @@ const ChatSidebar = ({
 
       xhr.addEventListener('load', () => {
         if (xhr.status === 201) {
+          let result = {};
+          try {
+            result = JSON.parse(xhr.responseText);
+          } catch (error) {
+            setFileError('Сервер вернул некорректный ответ после загрузки файла.');
+          }
+          if (result.file?.indexStatus === 'disabled') {
+            setFileError('Файл сохранён, но поиск по файлам отключён на сервере.');
+          }
           loadFiles();
+        } else {
+          setFileError(`Не удалось загрузить «${file.name}» (HTTP ${xhr.status}).`);
         }
         setUploading(false);
         setUploadProgress(0);
       });
 
       xhr.addEventListener('error', () => {
+        setFileError(`Не удалось загрузить «${file.name}»: ошибка соединения.`);
         setUploading(false);
         setUploadProgress(0);
       });
@@ -146,13 +128,25 @@ const ChatSidebar = ({
     }
   };
 
-  const downloadFile = (fileId, fileName) => {
-    const link = document.createElement('a');
-    link.href = `${backendUrl}/api/files/${fileId}/download`;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadFile = async (fileId, fileName) => {
+    setFileError('');
+    try {
+      const response = await fetch(`${backendUrl}/api/files/${fileId}/download`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setFileError(`Не удалось скачать «${fileName}». Возможно, файл отсутствует на сервере (${error.message}).`);
+      loadFiles();
+    }
   };
 
   const deleteFile = async (fileId) => {
@@ -168,6 +162,17 @@ const ChatSidebar = ({
       }
     } catch (err) {
       console.error('Error deleting file:', err);
+    }
+  };
+
+  const reindexFile = async (fileId) => {
+    setFileError('');
+    try {
+      const response = await fetch(`${backendUrl}/api/files/${fileId}/reindex`, { method: 'POST' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      loadFiles();
+    } catch (error) {
+      setFileError(`Не удалось повторно обработать файл (${error.message}).`);
     }
   };
 
@@ -236,81 +241,6 @@ const ChatSidebar = ({
         </div>
 
         <div className="sidebar-section">
-          <label className="sidebar-label">
-            Provider:
-            <select value={provider} onChange={(e) => setProvider(e.target.value)} className="sidebar-select">
-              <option value="gemini">Google Gemini</option>
-              <option value="custom">My Server</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="sidebar-section">
-          <label className="sidebar-label">
-            Model:
-            <select 
-              value={selectedModel} 
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="sidebar-select"
-            >
-              {provider === 'gemini' && availableModels.length > 0 ? (
-                availableModels.map((m) => {
-                  const short = m.includes('/') ? m.split('/').pop() : m;
-                  return (
-                    <option key={m} value={short}>{short}</option>
-                  );
-                })
-              ) : provider === 'gemini' ? (
-                <>
-                  <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                </>
-              ) : (
-                <>
-                  <option value={customServerConfig.defaultModel}>{customServerConfig.defaultModel}</option>
-                </>
-              )}
-            </select>
-          </label>
-          {provider === 'gemini' && modelsError && (
-            <div className="models-error">Failed to get models list: {modelsError}</div>
-          )}
-        </div>
-
-        <div className="sidebar-section">
-          <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>System Context</h3>
-          <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <input 
-              type="checkbox" 
-              checked={useSystemPrompt}
-              onChange={(e) => setUseSystemPrompt(e.target.checked)}
-            />
-            <span> Use System Context</span>
-          </label>
-          <textarea
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            placeholder="Enter contextual information for the AI model..."
-            rows="3"
-            className="sidebar-textarea"
-            disabled={!useSystemPrompt}
-          />
-        </div>
-
-        <div className="sidebar-section">
-          <h3 style={{ marginTop: '1rem', marginBottom: '0.25rem', color: '#333', fontSize: '1rem', fontWeight: '500' }}>Search in files</h3>
-          <label className="rag-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-            <input 
-              type="checkbox" 
-              checked={useRag}
-              onChange={(e) => setUseRag(e.target.checked)}
-            />
-            <span>Search for answers in files</span>
-          </label>
-        </div>
-
-        <div className="sidebar-section">
           <div className="sidebar-upload-zone">
             <div 
               className={`upload-zone ${dragActive ? 'drag-active' : ''}`}
@@ -326,7 +256,7 @@ const ChatSidebar = ({
                 multiple
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,.docx,.txt"
               />
               
               {uploading ? (
@@ -352,6 +282,7 @@ const ChatSidebar = ({
 
         <div className="sidebar-section files-section" style={{ marginTop: '0.5rem' }}>
           <h3 style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: '#666', fontSize: '0.875rem', fontWeight: '400' }}>Uploaded files</h3>
+          {fileError && <div className="file-error" role="alert">{fileError}</div>}
 
           {filesLoading && files.length === 0 ? (
             <div className="loading">Loading files...</div>
@@ -375,10 +306,29 @@ const ChatSidebar = ({
                       <span className="file-item-size">{file.formattedSize}</span>
                       <span className="file-item-date">{formatDate(file.uploadedAt)}</span>
                     </div>
+                    {file.indexStatus !== 'ready' && (
+                      <div className="file-index-status">
+                        {file.indexStatus === 'missing' ? 'Файл отсутствует на сервере — загрузите повторно' :
+                         file.indexStatus === 'failed' ? 'Поиск по файлу не работает — загрузите повторно' :
+                         file.indexStatus === 'disabled' ? 'Поиск по файлам отключён' :
+                         file.indexStatus === 'unsupported' ? 'Этот формат не участвует в поиске' :
+                         file.indexStatus === 'pending' ? 'Индексация...' : 'Статус поиска неизвестен — загрузите повторно'}
+                      </div>
+                    )}
                   </div>
                   <div className="file-item-actions">
+                    {file.available && ['failed', 'unknown', 'disabled'].includes(file.indexStatus) && (
+                      <button
+                        onClick={() => reindexFile(file.id)}
+                        className="file-item-reindex"
+                        title="Повторить поиск по файлу"
+                      >
+                        ↻
+                      </button>
+                    )}
                     <button
                       onClick={() => downloadFile(file.id, file.originalName)}
+                      disabled={!file.available}
                       className="file-item-download"
                       title="Download file"
                     >

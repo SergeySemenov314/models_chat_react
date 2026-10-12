@@ -2,6 +2,7 @@
   "name": "react-ollama-chat",
   "version": "0.1.0",
   "private": true,
+  "homepage": "/files-chat",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@testing-library/dom": "^10.4.1",

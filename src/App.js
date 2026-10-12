@@ -1,25 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import ChatSidebar from './components/ChatSidebar';
+import MessageContent from './components/MessageContent';
 
 function App() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // Модель на бэке всегда Gemini; храним предпочтительную для fallback-оптимизации
   const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash-lite');
-  const [systemPrompt, setSystemPrompt] = useState('You are a helpful AI assistant that answers user questions clearly and informatively.');
-  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
-  const [useRag, setUseRag] = useState(true);
   const messagesEndRef = useRef(null);
-  const [provider, setProvider] = useState('gemini'); // 'gemini' | 'custom'
-  const [availableModels, setAvailableModels] = useState([]);
-  const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [modelsError, setModelsError] = useState('');
   const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-  const [customServerConfig, setCustomServerConfig] = useState({
-    configured: false,
-    defaultModel: 'qwen2:0.5b'
-  });
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   // Handle Escape key to close sidebar
@@ -41,84 +32,6 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Выбор лучшей доступной модели на основе списка из API
-  const pickBestModel = (modelsList) => {
-    const names = modelsList.map(m => m);
-    // Предпочитаем модели с бесплатной квотой (у Gemini 2.0-* free tier сейчас = 0)
-    const preferredOrder = [
-      'gemini-2.5-flash-lite',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash'
-    ];
-    for (const pref of preferredOrder) {
-      if (names.some(n => n === pref)) return pref;
-      // также пробуем точные имена из ListModels, которые приходят как models/NAME
-      if (names.some(n => n.endsWith('/' + pref))) return pref;
-    }
-    // Если ничего из предпочтительных нет — берем первый
-    if (names.length > 0) {
-      const first = names[0];
-      return first.includes('/') ? first.split('/').pop() : first;
-    }
-    return 'gemini-2.5-flash-lite';
-  };
-
-  // Загружаем конфигурацию сервера
-  useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const resp = await fetch(`${backendUrl}/api/chat/config`);
-        if (resp.ok) {
-          const config = await resp.json();
-          setCustomServerConfig({
-            configured: config.customServerConfigured,
-            defaultModel: config.defaultCustomModel
-          });
-        }
-      } catch (e) {
-        console.error('Config loading error:', e);
-      }
-    };
-
-    loadConfig();
-  }, [backendUrl]);
-
-  // Загружаем список доступных моделей через бэкенд
-  useEffect(() => {
-    const loadModels = async () => {
-      if (provider !== 'gemini') return;
-      try {
-        setModelsLoaded(false);
-        setModelsError('');
-        const resp = await fetch(`${backendUrl}/api/chat/models`);
-        if (!resp.ok) {
-          throw new Error(`Backend HTTP ${resp.status}`);
-        }
-        const json = await resp.json();
-        const models = json.models || [];
-        setAvailableModels(models);
-        setModelsLoaded(true);
-
-        // Если выбранная модель недоступна, выбираем лучшую доступную
-        const flatNames = models.map(n => n.includes('/') ? n.split('/').pop() : n);
-        const selectedFlat = selectedModel;
-        if (!flatNames.includes(selectedFlat)) {
-          const best = pickBestModel(models);
-          if (best && best !== selectedModel) {
-            setSelectedModel(best);
-          }
-        }
-      } catch (e) {
-        console.error('Models loading error:', e);
-        setModelsError(e.message || 'Failed to get models list');
-        setModelsLoaded(true);
-      }
-    };
-
-    loadModels();
-    // Загружаем при смене провайдера
-  }, [selectedModel, provider, backendUrl]);
 
   const sendMessage = async (messageText = null) => {
     // Normalize argument: React passes click event to handlers bound directly
@@ -144,14 +57,10 @@ function App() {
       })));
       chatMessages.push({ role: 'user', content: currentInput });
 
-      // Подготавливаем данные для запроса
-      // System Context отправляется только если поле заполнено и чекбокс включен
+      // На бэке всегда Gemini; поиск по файлам выполняется всегда
       const requestData = {
-        provider: provider,
-        model: provider === 'gemini' ? selectedModel : customServerConfig.defaultModel,
+        model: selectedModel,
         messages: chatMessages,
-        systemPrompt: (useSystemPrompt && systemPrompt.trim()) ? systemPrompt.trim() : undefined,
-        useRag: useRag
       };
 
       // Отправляем запрос на бэкенд
@@ -172,14 +81,15 @@ function App() {
         content: data.content,
         timestamp: new Date(),
         stats: data.stats,
-        sources: data.sources
+        sources: data.sources,
+        fileSearchWarning: data.fileSearchWarning
       };
       setMessages(prev => [...prev, aiMessage]);
 
-      // Если ответ пришел от другой модели (после fallback на бэкенде),
-      // выбираем её в селекте, чтобы следующие запросы шли через неё
+      // Если ответ пришёл от другой модели (после fallback на бэкенде),
+      // запоминаем её, чтобы следующие запросы шли через неё
       const respondedModel = data?.stats?.model;
-      if (provider === 'gemini' && respondedModel && respondedModel !== selectedModel) {
+      if (respondedModel && respondedModel !== selectedModel) {
         setSelectedModel(respondedModel);
       }
     } catch (error) {
@@ -238,48 +148,16 @@ function App() {
             <div className="messages">
           {messages.length === 0 && (
             <div className="welcome-message">
-              <h2>Welcome to Models Chat!</h2>
-              <p>
-                {`${provider === 'gemini' ? 'Google Gemini' : 'Your server'} is ready to help you. Start the conversation!`}
-              </p>
-              {useSystemPrompt && systemPrompt.trim() && (
-                <div className="system-prompt-status active">
-                  ✅ System Context active
-                </div>
-              )}
-              {(!useSystemPrompt || !systemPrompt.trim()) && (
-                <div className="system-prompt-status inactive">
-                  ℹ️ System Context {!useSystemPrompt ? 'disabled' : 'not set'}
-                </div>
-              )}
-              {useRag && (
-                <div className="system-prompt-status active">
-                  ✅ Search for answers in files active
-                </div>
-              )}
-              {!useRag && (
-                <div className="system-prompt-status inactive">
-                  ℹ️ Search for answers in files disabled
-                </div>
-              )}
-              {(provider === 'gemini' || (provider === 'custom' && customServerConfig.configured)) && (
-                <div className="example-prompts">
-                   <button onClick={() => sendMessage('In what year was the first artificial neural network created and who were its creators? (Answer in English)')} title="Document search test" style={{ fontWeight: '600' }}>
-                    📄 [RAG Test] In what year was the first artificial neural network created and who were its creators?
-                  </button>
-                  <button onClick={() => sendMessage('What components does the RAG system include? (Answer in English)')} title="Document search test" style={{ fontWeight: '600' }}>
-                    📄 [RAG Test] What components does the RAG system include?
-                  </button>
-                  <button onClick={() => sendMessage('Hello! How are you?')}>
-                    Hello! How are you?
-                  </button>
-                  <button onClick={() => sendMessage('Explain quantum physics in simple terms')}>
-                    Explain quantum physics simply
-                  </button>            
-                </div>
-              )}
-             
-            
+              <h2>Welcome to Chat with documents!</h2>
+              <p>Start the conversation!</p>
+              <div className="example-prompts">
+                 <button onClick={() => sendMessage('In what year was the first artificial neural network created and who were its creators?')} title="Document search test" style={{ fontWeight: '600' }}>
+                  📄 [Test document] In what year was the first artificial neural network created and who were its creators?
+                </button>
+                <button onClick={() => sendMessage('What components does the RAG system include?')} title="Document search test" style={{ fontWeight: '600' }}>
+                  📄 [Test document] What components does the RAG system include?
+                </button>
+              </div>
             </div>
           )}
 
@@ -306,7 +184,7 @@ function App() {
                 </div>
               </div>
               <div className="message-content">
-                {message.content}
+                {message.role === 'assistant' ? <MessageContent content={message.content} /> : message.content}
               </div>
               {message.stats && (
                 <div className="message-stats">
@@ -315,6 +193,9 @@ function App() {
                   ({message.stats.promptTokens} input + {message.stats.responseTokens} output)
                 </div>
               )}
+              {message.fileSearchWarning && (
+                <div className="message-file-warning">{message.fileSearchWarning}</div>
+              )}
               {message.sources && message.sources.length > 0 && (
                 <div className="message-sources">
                   <strong>📚 Sources:</strong>
@@ -322,11 +203,6 @@ function App() {
                     {message.sources.map((source, idx) => (
                       <li key={idx}>
                         📄 {source.document} 
-                        {source.similarity && (
-                          <span className="similarity">
-                            (relevance: {Math.round(source.similarity * 100)}%)
-                          </span>
-                        )}
                       </li>
                     ))}
                   </ul>
@@ -367,11 +243,11 @@ function App() {
                 disabled={isLoading}
                 rows="3"
               />
-              <button 
-                onClick={() => sendMessage()} 
-                disabled={!inputValue.trim() || isLoading || (provider === 'custom' && !customServerConfig.configured)}
+              <button
+                onClick={() => sendMessage()}
+                disabled={!inputValue.trim() || isLoading}
                 className="send-btn"
-                title={(provider === 'custom' && !customServerConfig.configured ? 'Configure custom server in backend .env' : 'Send message')}
+                title="Send message"
               >
                 {isLoading ? '⏳' : '📤'}
               </button>
@@ -380,19 +256,6 @@ function App() {
 
           <ChatSidebar
             clearChat={clearChat}
-            provider={provider}
-            setProvider={setProvider}
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
-            availableModels={availableModels}
-            modelsLoaded={modelsLoaded}
-            modelsError={modelsError}
-            systemPrompt={systemPrompt}
-            setSystemPrompt={setSystemPrompt}
-            useSystemPrompt={useSystemPrompt}
-            setUseSystemPrompt={setUseSystemPrompt}
-            useRag={useRag}
-            setUseRag={setUseRag}
             isVisible={sidebarVisible}
             onClose={() => setSidebarVisible(false)}
           />
